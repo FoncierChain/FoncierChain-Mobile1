@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
@@ -63,10 +64,15 @@ class TransactionHistory {
 }
 
 class LandService with ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  // Instance Firestore avec le databaseId spécifique si nécessaire
+  late final FirebaseFirestore _db;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   LandService() {
+    _db = FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'ai-studio-66c2610a-a070-4530-8833-e441559e6519',
+    );
     // Écoute les changements d'état d'authentification
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
