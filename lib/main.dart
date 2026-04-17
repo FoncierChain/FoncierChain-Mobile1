@@ -7,9 +7,13 @@ import 'screens/map_screen.dart';
 import 'screens/agent_portal_screen.dart';
 import 'services/land_service.dart';
 
+// FoncierChain Brazzaville - Main Entry Point
+// Optimized for mobile-first land registry transparency
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Note: Firebase initialization needs to be configured locally with your google-services.json
+  // IMPORTANT: Firebase must be configured manually by exporting the code
+  // and adding the google-services.json file in the android/app/ directory.
   runApp(const FoncierChainApp());
 }
 
@@ -20,19 +24,22 @@ class FoncierChainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => LandService()),
+        ChangeNotifierProvider(create: (BuildContext context) => LandService()),
       ],
       child: MaterialApp(
         title: 'FoncierChain',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
+          useMaterial3: true,
           brightness: Brightness.dark,
           scaffoldBackgroundColor: const Color(0xFF0F1115),
           primaryColor: const Color(0xFFC5A059),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFC5A059),
-            secondary: Color(0xFFC5A059),
-            surface: Color(0xFF1A1C20),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFC5A059),
+            brightness: Brightness.dark,
+            primary: const Color(0xFFC5A059),
+            secondary: const Color(0xFFC5A059),
+            surface: const Color(0xFF1A1C20),
           ),
           textTheme: GoogleFonts.interTextTheme(
             ThemeData.dark().textTheme.apply(bodyColor: Colors.white),
@@ -66,6 +73,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     const AgentPortalScreen(),
   ];
 
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,22 +88,47 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+          color: const Color(0xFF0F1115),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withOpacity(0.05),
+              width: 1,
+            ),
+          ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: _onTabTapped,
           backgroundColor: const Color(0xFF0F1115),
           selectedItemColor: const Color(0xFFC5A059),
           unselectedItemColor: const Color(0xFF94A3B8),
           type: BottomNavigationBarType.fixed,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
           selectedFontSize: 10,
           unselectedFontSize: 10,
+          elevation: 0,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'ACCUEIL'),
-            BottomNavigationBarItem(icon: Icon(Icons.verified_user), label: 'VÉRIFIER'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'CARTE'),
-            BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings), label: 'AGENT'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_filled),
+              label: 'ACCUEIL',
+              tooltip: 'Accueil',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.verified_user),
+              label: 'VÉRIFIER',
+              tooltip: 'Vérifier un titre',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map_outlined),
+              label: 'CARTE',
+              tooltip: 'Plan cadastral',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.admin_panel_settings),
+              label: 'AGENT',
+              tooltip: 'Espace Agent',
+            ),
           ],
         ),
       ),
