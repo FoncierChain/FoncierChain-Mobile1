@@ -47,13 +47,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'TODO_API_KEY',
-    appId: 'TODO_APP_ID',
-    messagingSenderId: 'TODO_SENDER_ID',
-    projectId: 'foncierchain',
-    authDomain: 'foncierchain.firebaseapp.com',
-    storageBucket: 'foncierchain.appspot.com',
-    measurementId: 'TODO_MEASUREMENT_ID',
+    apiKey: 'AIzaSyDChvpZ3zvog8GHysUAHw5c_Qn__W3U3hw',
+    appId: '1:903921510673:web:9f7ab2c59fd26a806444b0',
+    messagingSenderId: '903921510673',
+    projectId: 'hamster-452315',
+    authDomain: 'hamster-452315.firebaseapp.com',
+    storageBucket: 'hamster-452315.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

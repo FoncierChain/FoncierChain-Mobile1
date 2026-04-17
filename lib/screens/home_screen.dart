@@ -68,19 +68,29 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           Text(
-            "Sécurisez votre\npatrimoine foncier à\nBrazzaville.",
+            "Application mobile citoyenne.",
             style: GoogleFonts.inter(
-              fontSize: 48,
+              fontSize: 40,
               fontWeight: FontWeight.w900,
               height: 1.1,
               color: const Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Vérifiez instantanément la propriété d'un terrain à Brazzaville.",
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF00963F),
+              height: 1.2,
             ),
           ),
           const SizedBox(height: 24),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Text(
-              "FoncierChain utilise la technologie blockchain de AfriChain solutions pour garantir l'immutabilité des titres de propriété et éliminer la double attribution des parcelles à Brazzaville.",
+              "Objectif principal : Sécuriser votre patrimoine foncier grâce à la technologie blockchain de AfriChain solutions. Éliminez la double attribution des parcelles en un clic.",
               style: GoogleFonts.inter(
                 fontSize: 16,
                 color: Colors.black54,
