@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  _buildStatsRow(),
+                  _buildStatsRow(context),
                   const SizedBox(height: 32),
                   _buildFeaturePortals(context),
                   const SizedBox(height: 48),
@@ -114,19 +114,19 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
+        Expanded(child: _buildStatCard(context, "12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history)),
+        Expanded(child: _buildStatCard(context, "100%", "HISTORIQUE IMMUABLE", Icons.history)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
+        Expanded(child: _buildStatCard(context, "Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
       ],
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  Widget _buildStatCard(BuildContext context, String value, String label, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -166,17 +166,17 @@ class HomeScreen extends StatelessWidget {
         if (constraints.maxWidth > 700) {
           return Row(
             children: [
-              Expanded(child: _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search)),
+              Expanded(child: _buildPortalCard(context, "PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search)),
               const SizedBox(width: 24),
-              Expanded(child: _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined)),
+              Expanded(child: _buildPortalCard(context, "CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined)),
             ],
           );
         } else {
           return Column(
             children: [
-              _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search),
+              _buildPortalCard(context, "PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search),
               const SizedBox(height: 24),
-              _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined),
+              _buildPortalCard(context, "CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined),
             ],
           );
         }
@@ -184,7 +184,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPortalCard(String title, String desc, String btnText, IconData icon) {
+  Widget _buildPortalCard(BuildContext context, String title, String desc, String btnText, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
