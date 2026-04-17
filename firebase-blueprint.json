@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Parcel": {
+      "title": "Parcel",
+      "description": "Représentation numérique d'une parcelle foncière à Brazzaville.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identifiant unique de la parcelle (ex: BZV-POTO-001)" },
+        "ownerName": { "type": "string", "description": "Nom complet du propriétaire légal" },
+        "ownerId": { "type": "string", "description": "ID unique du propriétaire (CNI / Passeport)" },
+        "surface": { "type": "number", "description": "Superficie en mètres carrés" },
+        "usage": { "type": "string", "enum": ["Résidentiel", "Commercial", "Agricole", "Industriel"], "description": "Type d'usage du terrain" },
+        "address": { "type": "string", "description": "Adresse physique complète" },
+        "coordinates": { "type": "string", "description": "Coordonnées GPS (lat, lng pairs)" },
+        "status": { "type": "string", "enum": ["validé", "en_attente"], "description": "Statut de validation du titre" },
+        "hash": { "type": "string", "description": "Empreinte cryptographique de l'acte" },
+        "lastUpdate": { "type": "string", "format": "date-time" },
+        "agentUid": { "type": "string", "description": "UID de l'agent ayant enregistré la parcelle" }
+      },
+      "required": ["id", "ownerName", "surface", "usage", "address", "coordinates", "status", "hash"]
+    },
+    "Transfer": {
+      "title": "Transfer",
+      "description": "Historique des transferts de propriété d'une parcelle.",
+      "type": "object",
+      "properties": {
+        "parcelId": { "type": "string" },
+        "previousOwner": { "type": "string" },
+        "newOwner": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "documentHash": { "type": "string" },
+        "agentUid": { "type": "string" }
+      },
+      "required": ["parcelId", "previousOwner", "newOwner", "date", "documentHash", "agentUid"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Profil utilisateur (citoyen ou agent).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["citizen", "agent", "admin"] },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "parcels/{parcelId}": {
+      "schema": "Parcel",
+      "description": "Registre principal des parcelles"
+    },
+    "parcels/{parcelId}/history/{transferId}": {
+      "schema": "Transfer",
+      "description": "Historique immuable des transferts"
+    },
+    "users/{uid}": {
+      "schema": "User",
+      "description": "Profils et rôles utilisateurs"
+    }
+  }
+}

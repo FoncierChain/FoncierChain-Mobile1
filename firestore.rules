@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: parcels
+    // Fields: id, ownerName, ownerId, surface, usage, address, coordinates, status, hash, lastUpdate, agentUid
+    //
+    // Collection: users
+    // Fields: uid, email, role, displayName
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+       return request.auth != null;
+    }
+
+    function isAdmin() {
+       return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+         (request.auth.token.email == "hamsterlecurieux25@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isAgent() {
+       return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'agent' || isAdmin());
+    }
+
+    function isOwner(userId) {
+       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidParcel(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
+             data.ownerName is string && data.ownerName.size() > 0 && data.ownerName.size() < 100 &&
+             data.surface is number && data.surface > 0 &&
+             data.usage in ['Résidentiel', 'Commercial', 'Agricole', 'Industriel'] &&
+             data.address is string && data.address.size() > 0 &&
+             data.coordinates is string &&
+             data.status in ['validé', 'en_attente'] &&
+             data.hash is string && data.hash.size() > 0;
+    }
+
+    // Rules
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(uid) || isAdmin();
+    }
+
+    match /parcels/{parcelId} {
+      // Les citoyens peuvent vérifier n'importe quelle parcelle publiquement (lecture seule)
+      allow read: if true; 
+      
+      // Seuls les agents peuvent enregistrer ou mettre à jour des parcelles
+      allow create: if isAgent() && isValidParcel(request.resource.data);
+      allow update: if isAgent() && isValidParcel(request.resource.data) && 
+                      request.resource.data.id == resource.data.id; // ID immuable
+      
+      match /history/{transferId} {
+        allow read: if true;
+        allow create: if isAgent();
+        allow update, delete: if false; // L'historique est immuable
+      }
+    }
+  }
+}

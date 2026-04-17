@@ -1,0 +1,13 @@
+{
+  "name": "FoncierChain",
+  "description": "Système National de Gestion Foncière pour la vérification instantanée et sécurisée de la propriété des terrains à Brazzaville.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "Blockchain-like immutability via Firebase",
+    "Real-time Land Registry Search",
+    "Interactive Parcel Mapping",
+    "Secure Digital Certificates"
+  ]
+}
