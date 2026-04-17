@@ -228,6 +228,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       ],
     );
   }
+  
 
   Widget _buildErrorState() {
     return Center(
