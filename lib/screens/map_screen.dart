@@ -1,120 +1,280 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../services/land_service.dart';
 
-class MapScreen extends StatelessWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  Parcel? _selectedParcel;
+  final MapController _mapController = MapController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          FlutterMap(
-            options: const MapOptions(
-              initialCenter: LatLng(-4.2634, 15.2422), // Brazzaville
-              initialZoom: 13.0,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                userAgentPackageName: 'com.foncierchain.app',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: const LatLng(-4.2634, 15.2422),
-                    width: 40,
-                    height: 40,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFC5A059).withOpacity(0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFC5A059), width: 2),
-                      ),
-                      child: const Icon(Icons.location_on, color: Color(0xFFC5A059), size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          
-          // Overlay Search Bar
-          Positioned(
-            top: 60,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1C20),
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10)),
-                ],
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.search, color: Color(0xFFC5A059)),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Rechercher un quartier ou une parcelle...",
-                      style: TextStyle(color: Colors.white24, fontSize: 13),
-                    ),
-                  ),
-                  CircleAvatar(
-                    backgroundColor: Color(0xFFC5A059),
-                    radius: 16,
-                    child: Icon(Icons.my_location, color: Colors.black, size: 16),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildMap(),
+          _buildTopOverlay(),
+          if (_selectedParcel != null) _buildDetailsPanel(),
+          _buildMapControls(),
+        ],
+      ),
+    );
+  }
 
-          // Bottom Info Sheet Preview
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1C20),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.home_work_outlined, color: Color(0xFFC5A059), size: 32),
+  Widget _buildMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: const LatLng(-4.2634, 15.2422),
+        initialZoom: 15.0,
+        onTap: (_, __) => setState(() => _selectedParcel = null),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: const LatLng(-4.2634, 15.2422),
+              width: 40,
+              height: 40,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedParcel = Parcel(
+                      id: "BZV-45785-SECURE",
+                      ownerName: "Jean-Paul Makosso",
+                      surface: 450.0,
+                      address: "Avenue des Armées, Ouenzé",
+                      usage: "Résidentiel",
+                      hash: "0x892bcf921a83018...3e12",
+                      status: "Validé",
+                    );
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00963F).withOpacity(0.2),
+                    border: Border.all(color: const Color(0xFF00963F), width: 2),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 20),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Vue parcelles active", style: TextStyle(color: Color(0xFFC5A059), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                        SizedBox(height: 4),
-                        Text("Cadastre de Brazzaville", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text("Exploration immersive du registre foncier", style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                      ],
-                    ),
+                  child: const Center(
+                    child: Icon(Icons.location_on, color: Color(0xFF00963F), size: 20),
                   ),
-                ],
+                ),
               ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopOverlay() {
+    return Positioned(
+      top: 24,
+      left: 24,
+      right: 24,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search, color: Colors.black38, size: 20),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 300,
+                  child: Text(
+                    "Rechercher une zone ou un ID...",
+                    style: GoogleFonts.inter(color: Colors.black38, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.layers_outlined, color: Colors.black87, size: 20),
+                const SizedBox(width: 8),
+                Text("CADASTRE CG-01", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12)),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsPanel() {
+    final bool isWide = MediaQuery.of(context).size.width > 900;
+
+    return Positioned(
+      top: isWide ? 100 : null,
+      right: isWide ? 24 : 16,
+      left: isWide ? null : 16,
+      bottom: 24,
+      width: isWide ? 380 : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0x0D000000))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("DÉTAILS PARCELLE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
+                  IconButton(
+                    onPressed: () => setState(() => _selectedParcel = null),
+                    icon: const Icon(Icons.close, size: 18),
+                    style: IconButton.styleFrom(backgroundColor: const Color(0xFFF8FAFC)),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_selectedParcel!.id, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      const Text("STATUT: VALIDÉ BLOCKCHAIN", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.surface} m²"),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.info_outline, "USAGE", _selectedParcel!.usage),
+                  const SizedBox(height: 16),
+                  _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Text("CERTIFICAT NUMÉRIQUE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.description_outlined, color: Colors.black54),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text("Signé par AfriChain solutions", style: TextStyle(color: Colors.black38, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.open_in_new, size: 14, color: Colors.blue),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
+                    child: const Text("Générer un extrait officiel"),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: Colors.black54, size: 18),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A1A1A))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMapControls() {
+    return Positioned(
+      bottom: 24,
+      left: 24,
+      child: Column(
+        children: [
+          _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
+          const SizedBox(height: 8),
+          _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
+          const SizedBox(height: 16),
+          _buildMapButton(Icons.my_location, () {}),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Icon(icon, size: 20, color: Colors.black87),
       ),
     );
   }
