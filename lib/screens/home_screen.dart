@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../services/land_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,9 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHero() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = screenWidth < 600 ? 28 : (screenWidth < 900 ? 32 : 36);
+    final double subTitleFontSize = screenWidth < 600 ? 18 : 22;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 64),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: screenWidth < 600 ? 40 : 64),
       decoration: BoxDecoration(
         color: Colors.white,
         gradient: LinearGradient(
@@ -54,16 +60,16 @@ class _HomeScreenState extends State<HomeScreen> {
               color: const Color(0xFF00963F).withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
                 const Icon(Icons.verified, color: Color(0xFF00963F), size: 14),
-                const SizedBox(width: 8),
                 Text(
                   "PROJET FONCIERCHAIN (CG-01) • ÉQUIPE AFRICHAIN SOLUTIONS",
                   style: GoogleFonts.inter(
                     color: const Color(0xFF00963F),
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
@@ -74,28 +80,38 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 32),
           Text(
             "Application mobile citoyenne.",
-            style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 36),
+            style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: titleFontSize, height: 1.1),
           ),
           const SizedBox(height: 12),
           Text(
             "Vérifiez instantanément la propriété d'un terrain à Brazzaville.",
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(color: const Color(0xFF00963F), height: 1.2),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              color: const Color(0xFF00963F), 
+              height: 1.2,
+              fontSize: subTitleFontSize,
+            ),
           ),
           const SizedBox(height: 24),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Text(
               "Sécurisez votre patrimoine foncier grâce à la technologie blockchain de AfriChain solutions. Éliminez la double attribution des parcelles en un clic.",
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black54, height: 1.6),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.black54, 
+                height: 1.6,
+                fontSize: screenWidth < 600 ? 14 : 16,
+              ),
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 40),
           SizedBox(
             width: double.infinity,
             child: Column(
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Provider.of<LandService>(context, listen: false).setTabIndex(1);
+                  },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 60),
                   ),
@@ -103,7 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Provider.of<LandService>(context, listen: false).setTabIndex(2);
+                  },
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -120,19 +138,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(child: _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return Column(
+            children: [
+              _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined, isFullWidth: true),
+              const SizedBox(height: 12),
+              _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history, isFullWidth: true),
+              const SizedBox(height: 12),
+              _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined, isFullWidth: true),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  Widget _buildStatCard(String value, String label, IconData icon, {bool isFullWidth = false}) {
     return Container(
+      width: isFullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -217,7 +251,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+               final index = title.contains("VÉRIFICATION") ? 1 : 2;
+               Provider.of<LandService>(context, listen: false).setTabIndex(index);
+            },
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

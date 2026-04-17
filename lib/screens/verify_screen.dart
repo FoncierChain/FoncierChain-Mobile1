@@ -71,30 +71,38 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
   Widget _buildSecondaryHeader() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: screenWidth < 600 ? 16 : 32, vertical: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0x0D000000))),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        runSpacing: 12,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Système National de Gestion Foncière",
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                "BRAZZAVILLE • PORTAIL DE VALIDATION",
-                style: GoogleFonts.inter(color: Colors.black38, fontSize: 10, letterSpacing: 1),
-              ),
-            ],
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: screenWidth < 600 ? double.infinity : screenWidth * 0.6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Système National de Gestion Foncière",
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: screenWidth < 600 ? 14 : 16),
+                ),
+                Text(
+                  "BRAZZAVILLE • PORTAIL DE VALIDATION",
+                  style: GoogleFonts.inter(color: Colors.black38, fontSize: screenWidth < 600 ? 8 : 10, letterSpacing: 1),
+                ),
+              ],
+            ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.green.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
@@ -105,7 +113,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
               children: [
                 Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                 const SizedBox(width: 8),
-                const Text("Connecté", style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text("Connecté", style: TextStyle(color: Colors.green, fontSize: screenWidth < 600 ? 10 : 11, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -115,8 +123,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
   Widget _buildSearchSection() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(screenWidth < 600 ? 16 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -125,20 +135,28 @@ class _VerifyScreenState extends State<VerifyScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 8,
             children: [
               Text(
                 "VÉRIFICATION DE TITRE FONCIER",
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black87),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.black87,
+                  fontSize: screenWidth < 600 ? 9 : 10,
+                ),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                  Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
                   Text(
                     "ACCÈS PUBLIC",
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.green),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.green,
+                      fontSize: screenWidth < 600 ? 9 : 10,
+                    ),
                   ),
                 ],
               ),
