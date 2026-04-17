@@ -1,121 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'screens/home_screen.dart';
+import 'screens/verify_screen.dart';
+import 'screens/map_screen.dart';
+import 'screens/agent_portal_screen.dart';
+import 'services/land_service.dart';
 
-void main() {
-  runApp(const MyApp());
+// FoncierChain Brazzaville - Main Entry Point
+// Optimized for mobile-first land registry transparency
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // IMPORTANT: Firebase must be configured manually by exporting the code
+  // and adding the google-services.json file in the android/app/ directory.
+  runApp(const FoncierChainApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class FoncierChainApp extends StatelessWidget {
+  const FoncierChainApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (BuildContext context) => LandService()),
+      ],
+      child: MaterialApp(
+        title: 'FoncierChain',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF0F1115),
+          primaryColor: const Color(0xFFC5A059),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFC5A059),
+            brightness: Brightness.dark,
+            primary: const Color(0xFFC5A059),
+            secondary: const Color(0xFFC5A059),
+            surface: const Color(0xFF1A1C20),
+          ),
+          textTheme: GoogleFonts.interTextTheme(
+            ThemeData.dark().textTheme.apply(bodyColor: Colors.white),
+          ),
+          cardTheme: CardTheme(
+            color: const Color(0xFF1A1C20),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 0,
+          ),
+        ),
+        home: const MainNavigationShell(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainNavigationShell extends StatefulWidget {
+  const MainNavigationShell({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainNavigationShell> createState() => _MainNavigationShellState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainNavigationShellState extends State<MainNavigationShell> {
+  int _currentIndex = 0;
 
-  void _incrementCounter() {
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const VerifyScreen(),
+    const MapScreen(),
+    const AgentPortalScreen(),
+  ];
+
+  void _onTabTapped(int index) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _currentIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F1115),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withOpacity(0.05),
+              width: 1,
+            ),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          backgroundColor: const Color(0xFF0F1115),
+          selectedItemColor: const Color(0xFFC5A059),
+          unselectedItemColor: const Color(0xFF94A3B8),
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_filled),
+              label: 'ACCUEIL',
+              tooltip: 'Accueil',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.verified_user),
+              label: 'VÉRIFIER',
+              tooltip: 'Vérifier un titre',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map_outlined),
+              label: 'CARTE',
+              tooltip: 'Plan cadastral',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.admin_panel_settings),
+              label: 'AGENT',
+              tooltip: 'Espace Agent',
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
