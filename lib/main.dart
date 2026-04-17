@@ -108,8 +108,6 @@ class MainNavigationShell extends StatefulWidget {
 }
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _currentIndex = 0;
-
   final List<Widget> _screens = [
     const HomeScreen(),
     const VerifyScreen(),
@@ -118,30 +116,30 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   ];
 
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    Provider.of<LandService>(context, listen: false).setTabIndex(index);
   }
 
   @override
   Widget build(BuildContext context) {
+    final navService = Provider.of<LandService>(context);
+    
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: navService.currentTabIndex,
         children: _screens,
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(navService.currentTabIndex),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(int currentIndex) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
       ),
       child: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: _onTabTapped,
         selectedItemColor: const Color(0xFF00963F),
         unselectedItemColor: Colors.black38,

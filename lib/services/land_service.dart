@@ -68,6 +68,14 @@ class LandService with ChangeNotifier {
   late final FirebaseFirestore _db;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  int _currentTabIndex = 0;
+  int get currentTabIndex => _currentTabIndex;
+
+  void setTabIndex(int index) {
+    _currentTabIndex = index;
+    notifyListeners();
+  }
+
   LandService() {
     _db = FirebaseFirestore.instanceFor(
       app: Firebase.app(),
