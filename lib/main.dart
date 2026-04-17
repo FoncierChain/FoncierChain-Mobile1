@@ -10,6 +10,7 @@ import 'services/land_service.dart';
 // FoncierChain Brazzaville - Main Entry Point
 // Optimized for mobile-first land registry transparency
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // IMPORTANT: Firebase must be configured manually by exporting the code
