@@ -121,7 +121,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("STATUT DU TITRE", style: TextStyle(color: Color(0xFFC5A059), fontSize: 9, fontWeight: FontWeight.bold)),
                   Container(
@@ -228,7 +228,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
       ],
     );
   }
-  
 
   Widget _buildErrorState() {
     return Center(
