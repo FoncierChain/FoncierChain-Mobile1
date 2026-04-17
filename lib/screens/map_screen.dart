@@ -83,45 +83,27 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildTopOverlay() {
     return Positioned(
       top: 24,
-      left: 24,
-      right: 24,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      left: 16,
+      right: 16,
+      child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5))],
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.search, color: Colors.black38, size: 20),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 300,
-                  child: Text(
-                    "Rechercher une zone ou un ID...",
-                    style: GoogleFonts.inter(color: Colors.black38, fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.layers_outlined, color: Colors.black87, size: 20),
-                const SizedBox(width: 8),
-                Text("CADASTRE CG-01", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12)),
-              ],
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Rechercher une parcelle ou une zone...",
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                fillColor: Colors.transparent,
+                hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.black26),
+              ),
             ),
           ),
         ],
@@ -156,7 +138,10 @@ class _MapScreenState extends State<MapScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("DÉTAILS PARCELLE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
+                   Text(
+                    "DÉTAILS PARCELLE",
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black45),
+                  ),
                   IconButton(
                     onPressed: () => setState(() => _selectedParcel = null),
                     icon: const Icon(Icons.close, size: 18),
@@ -170,13 +155,16 @@ class _MapScreenState extends State<MapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_selectedParcel!.id, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
+                  Text(_selectedParcel!.id, style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                       const SizedBox(width: 8),
-                      const Text("STATUT: VALIDÉ BLOCKCHAIN", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text(
+                        "STATUT: VALIDÉ BLOCKCHAIN",
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.green),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),

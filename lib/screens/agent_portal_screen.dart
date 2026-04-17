@@ -77,13 +77,13 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               const SizedBox(height: 32),
               Text(
                 "ESPACE CERTIFIÉ",
-                style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5, color: Colors.black),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontSize: 22),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                "Réservé aux agents du cadastre et notaires certifiés de Brazzaville.",
+              const SizedBox(height: 12),
+              Text(
+                "Réservé aux agents du cadastre et notaires certifiés de la République du Congo.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black45, fontSize: 13, height: 1.5),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 48),
               if (_isLoading)
@@ -92,15 +92,16 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                 ElevatedButton(
                   onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
+                    minimumSize: const Size(double.infinity, 60),
                     backgroundColor: const Color(0xFF1A1A1A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.login, size: 18),
-                      SizedBox(width: 12),
-                      Text("Se connecter avec Google"),
+                      const Icon(Icons.security, size: 20),
+                      const SizedBox(width: 12),
+                      Text("Connexion Authentifiée", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),

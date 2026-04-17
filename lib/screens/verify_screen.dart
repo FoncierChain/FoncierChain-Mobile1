@@ -116,7 +116,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   Widget _buildSearchSection() {
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -130,52 +130,44 @@ class _VerifyScreenState extends State<VerifyScreen> {
             children: [
               Text(
                 "VÉRIFICATION DE TITRE FONCIER",
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black87),
               ),
               Row(
                 children: [
                   Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                   const SizedBox(width: 8),
-                  const Text("ACCÈS PUBLIC OUVERT", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(
+                    "ACCÈS PUBLIC",
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.green),
+                  ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black12),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              hintText: "Identifiant de parcelle (ex: BZV-45785)...",
+              prefixIcon: Icon(Icons.search, color: Color(0xFF00963F)),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: "Entrez l'ID de la parcelle (ex: BZV-45785-SECURE) ou l'adresse...",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    onSubmitted: (_) => _handleSearch(),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _handleSearch,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00963F),
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  ),
-                  child: const Text("Vérifier le Titre"),
-                ),
-              ],
+            onSubmitted: (_) => _handleSearch(),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _handleSearch,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+              ),
+              child: const Text("Vérifier le Titre Foncier"),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            "* La base de données est mise à jour en temps réel par les agents certifiés de AfriChain solutions.",
-            style: TextStyle(color: Colors.black26, fontSize: 11, fontStyle: FontStyle.italic),
+          Text(
+            "* La base de données est mise à jour en temps réel via AfriChain solutions Blockchain.",
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
           ),
         ],
       ),
