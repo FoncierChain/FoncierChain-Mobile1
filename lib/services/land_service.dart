@@ -78,7 +78,7 @@ class LandService with ChangeNotifier {
   // Recherche une parcelle par son ID
   Future<Parcel?> verifyParcel(String id) async {
     try {
-      final q = await _db.collection('parcels').where('id', 'isEqualTo', id.toUpperCase()).get();
+      final q = await _db.collection('parcels').where('id', isEqualTo: id.toUpperCase()).get();
       if (q.docs.isNotEmpty) {
         return Parcel.fromFirestore(q.docs.first.data());
       }

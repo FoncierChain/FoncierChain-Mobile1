@@ -37,7 +37,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   Widget _buildHeader(bool loggedIn) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.between,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,

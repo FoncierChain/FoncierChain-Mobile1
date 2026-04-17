@@ -10,7 +10,6 @@ import 'services/land_service.dart';
 // FoncierChain Brazzaville - Main Entry Point
 // Optimized for mobile-first land registry transparency
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // IMPORTANT: Firebase must be configured manually by exporting the code
@@ -45,9 +44,9 @@ class FoncierChainApp extends StatelessWidget {
           textTheme: GoogleFonts.interTextTheme(
             ThemeData.dark().textTheme.apply(bodyColor: Colors.white),
           ),
-          cardTheme: CardTheme(
-            color: const Color(0xFF1A1C20),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          cardTheme: const CardTheme(
+            color: Color(0xFF1A1C20),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
             elevation: 0,
           ),
         ),
