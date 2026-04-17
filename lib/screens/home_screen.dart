@@ -69,53 +69,45 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Text(
             "Application mobile citoyenne.",
-            style: GoogleFonts.inter(
-              fontSize: 40,
-              fontWeight: FontWeight.w900,
-              height: 1.1,
-              color: const Color(0xFF1A1A1A),
-            ),
+            style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 36),
           ),
           const SizedBox(height: 12),
           Text(
             "Vérifiez instantanément la propriété d'un terrain à Brazzaville.",
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF00963F),
-              height: 1.2,
-            ),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(color: const Color(0xFF00963F), height: 1.2),
           ),
           const SizedBox(height: 24),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Text(
-              "Objectif principal : Sécuriser votre patrimoine foncier grâce à la technologie blockchain de AfriChain solutions. Éliminez la double attribution des parcelles en un clic.",
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: Colors.black54,
-                height: 1.6,
-              ),
+              "Sécurisez votre patrimoine foncier grâce à la technologie blockchain de AfriChain solutions. Éliminez la double attribution des parcelles en un clic.",
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black54, height: 1.6),
             ),
           ),
-          const SizedBox(height: 40),
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text("Vérifier une parcelle"),
-              ),
-              const SizedBox(width: 16),
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: const BorderSide(color: Colors.black12),
+          const SizedBox(height: 48),
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 60),
+                  ),
+                  child: const Text("Vérifier une parcelle"),
                 ),
-                child: const Text("Explorer la carte", style: TextStyle(color: Colors.black87)),
-              ),
-            ],
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: const BorderSide(color: Colors.black12),
+                  ),
+                  child: const Text("Explorer la carte", style: TextStyle(color: Colors.black87)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -136,11 +128,11 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildStatCard(String value, String label, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,17 +143,17 @@ class HomeScreen extends StatelessWidget {
               color: const Color(0xFF00963F).withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: const Color(0xFF00963F), size: 20),
+            child: Icon(icon, color: const Color(0xFF00963F), size: 18),
           ),
           const SizedBox(height: 16),
           Text(
             value,
-            style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 18),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black38, letterSpacing: 0.5),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black38, fontSize: 8),
           ),
         ],
       ),
@@ -194,7 +186,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildPortalCard(String title, String desc, String btnText, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -208,22 +200,22 @@ class HomeScreen extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black45),
               ),
               Icon(icon, color: Colors.black87, size: 20),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             desc,
-            style: GoogleFonts.inter(height: 1.6, color: Colors.black54, fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00963F),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(btnText),
           ),

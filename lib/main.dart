@@ -49,6 +49,32 @@ class FoncierChainApp extends StatelessWidget {
           ),
           textTheme: GoogleFonts.interTextTheme(
             ThemeData.light().textTheme,
+          ).copyWith(
+            displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+            displayMedium: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+            displaySmall: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
+            headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+            bodyLarge: GoogleFonts.inter(fontSize: 16, color: const Color(0xFF1A1A1A)),
+            bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+            labelSmall: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0x1A000000)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0x1A000000)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF00963F), width: 2),
+            ),
+            hintStyle: GoogleFonts.inter(color: Colors.black26, fontSize: 14),
           ),
           cardTheme: const CardThemeData(
             color: Colors.white,
