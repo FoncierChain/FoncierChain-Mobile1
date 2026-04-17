@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -76,8 +77,8 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            maxWidth: 600,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
             child: Text(
               "FoncierChain utilise la technologie blockchain de AfriChain solutions pour garantir l'immutabilité des titres de propriété et éliminer la double attribution des parcelles à Brazzaville.",
               style: GoogleFonts.inter(
