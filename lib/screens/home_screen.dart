@@ -6,151 +6,103 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 32),
-              _buildStatsGrid(),
-              const SizedBox(height: 32),
-              _buildFeatureCard(
-                icon: Icons.verified_user,
-                title: "Vérification Instantanée",
-                description: "Vérifiez l'authenticité d'un titre foncier en quelques secondes grâce à notre registre sécurisé.",
-                tag: "CITOYEN",
-              ),
-              const SizedBox(height: 16),
-              _buildFeatureCard(
-                icon: Icons.map,
-                title: "Cadastre Interactif",
-                description: "Visualisez les délimitations officielles des parcelles directement sur la carte de Brazzaville.",
-                tag: "GÉOGRAPHIQUE",
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                "Dernières Mutations",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC5A059)),
-              ),
-              const SizedBox(height: 16),
-              _buildRecentActivity(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        child: Column(
           children: [
-            Text(
-              "FoncierChain".toUpperCase(),
-              style: const TextStyle(
-                color: Color(0xFFC5A059),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+            _buildHero(context),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  _buildStatsRow(),
+                  const SizedBox(height: 32),
+                  _buildFeaturePortals(context),
+                  const SizedBox(height: 48),
+                ],
               ),
-            ),
-            const Text(
-              "Brazzaville, Congo",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ],
         ),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFFC5A059).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.notifications_none, color: Color(0xFFC5A059)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _buildStatCard("Titres Sécurisés", "12,450", Icons.shield_outlined),
-        _buildStatCard("Mutation 24h", "24", Icons.swap_horiz_outlined),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1C20),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: const Color(0xFFC5A059), size: 20),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
-        ],
       ),
     );
   }
 
-  Widget _buildFeatureCard({required IconData icon, required String title, required String description, required String tag}) {
+  Widget _buildHero(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 64),
       decoration: BoxDecoration(
+        color: Colors.white,
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFF1A1C20), const Color(0xFF0F1115)],
+          colors: [const Color(0xFF00963F).withOpacity(0.05), Colors.white],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFC5A059).withOpacity(0.1),
+              color: const Color(0xFF00963F).withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(tag, style: const TextStyle(color: Color(0xFFC5A059), fontSize: 8, fontWeight: FontWeight.bold)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.verified, color: Color(0xFF00963F), size: 14),
+                const SizedBox(width: 8),
+                Text(
+                  "PROJET FONCIERCHAIN (CG-01) • ÉQUIPE AFRICHAIN SOLUTIONS",
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF00963F),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
+          Text(
+            "Sécurisez votre\npatrimoine foncier à\nBrazzaville.",
+            style: GoogleFonts.inter(
+              fontSize: 48,
+              fontWeight: FontWeight.w900,
+              height: 1.1,
+              color: const Color(0xFF1A1A1A),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            maxWidth: 600,
+            child: Text(
+              "FoncierChain utilise la technologie blockchain de AfriChain solutions pour garantir l'immutabilité des titres de propriété et éliminer la double attribution des parcelles à Brazzaville.",
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: Colors.black54,
+                height: 1.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
           Row(
             children: [
-              Icon(icon, color: Colors.white, size: 28),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text("Vérifier une parcelle"),
+              ),
               const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(description, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                  ],
+              OutlinedButton(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Colors.black12),
                 ),
+                child: const Text("Explorer la carte", style: TextStyle(color: Colors.black87)),
               ),
             ],
           ),
@@ -159,41 +111,113 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivity() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 3,
-      itemBuilder: (context, index) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1C20).withOpacity(0.5),
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildStatsRow() {
+    return Row(
+      children: [
+        Expanded(child: _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
+        const SizedBox(width: 16),
+        Expanded(child: _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history)),
+        const SizedBox(width: 16),
+        Expanded(child: _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00963F).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF00963F), size: 20),
           ),
-          child: Row(
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black38, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturePortals(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 700) {
+          return Row(
             children: [
-              const CircleAvatar(
-                backgroundColor: Colors.white12,
-                radius: 18,
-                child: Icon(Icons.history, color: Color(0xFFC5A059), size: 16),
+              Expanded(child: _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search)),
+              const SizedBox(width: 24),
+              Expanded(child: _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined)),
+            ],
+          );
+        } else {
+          return Column(
+            children: [
+              _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search),
+              const SizedBox(height: 24),
+              _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined),
+            ],
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildPortalCard(String title, String desc, String btnText, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Mutation #45785-A", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    Text("Il y a 2 heures", style: TextStyle(color: Colors.white24, fontSize: 10)),
-                  ],
-                ),
-              ),
-              const Text("Vérifié", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+              Icon(icon, color: Colors.black87, size: 20),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 24),
+          Text(
+            desc,
+            style: GoogleFonts.inter(height: 1.6, color: Colors.black54, fontSize: 14),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00963F),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            ),
+            child: Text(btnText),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -66,6 +66,13 @@ class LandService with ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  LandService() {
+    // Écoute les changements d'état d'authentification
+    _auth.authStateChanges().listen((User? user) {
+      notifyListeners();
+    });
+  }
+
   User? get currentUser => _auth.currentUser;
 
   // Hachage immuable (Blockchain)
@@ -100,9 +107,22 @@ class LandService with ChangeNotifier {
         .map((snap) => snap.docs.map((doc) => TransactionHistory.fromFirestore(doc.data())).toList());
   }
 
-  // Login via Google (Simulation pour prototype)
+  // Login via Google (Pour Web/Chrome)
   Future<void> loginWithGoogle() async {
-    // Dans une app réelle, utilisez google_sign_in
+    try {
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      // Utilisation du popup pour Chrome (idéal pour le développement Web)
+      await _auth.signInWithPopup(googleProvider);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erreur lors de la connexion Google: $e");
+      rethrow;
+    }
+  }
+
+  // Déconnexion
+  Future<void> signOut() async {
+    await _auth.signOut();
     notifyListeners();
   }
 }
