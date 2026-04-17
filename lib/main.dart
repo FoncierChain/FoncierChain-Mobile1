@@ -44,7 +44,7 @@ class FoncierChainApp extends StatelessWidget {
           textTheme: GoogleFonts.interTextTheme(
             ThemeData.dark().textTheme.apply(bodyColor: Colors.white),
           ),
-          cardTheme: const CardTheme(
+          cardTheme: const CardThemeData(
             color: Color(0xFF1A1C20),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
             elevation: 0,
