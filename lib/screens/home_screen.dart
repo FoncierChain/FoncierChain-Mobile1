@@ -14,6 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B0E14),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -21,8 +22,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatsRow(),
+                  _buildMetricGrid(),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader("OPÉRATIONS RÉCENTES"),
+                  const SizedBox(height: 16),
+                  _buildRecentActivityList(),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader("PERFORMANCE BLOCKCHAIN"),
+                  const SizedBox(height: 16),
+                  _buildBlockchainStatusRow(),
                   const SizedBox(height: 32),
                   _buildFeaturePortals(),
                   const SizedBox(height: 48),
@@ -37,97 +47,80 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHero() {
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double titleFontSize = screenWidth < 600 ? 28 : (screenWidth < 900 ? 32 : 36);
-    final double subTitleFontSize = screenWidth < 600 ? 18 : 22;
-
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: screenWidth < 600 ? 40 : 64),
+      padding: EdgeInsets.fromLTRB(24, screenWidth < 600 ? 60 : 80, 24, 40),
       decoration: BoxDecoration(
-        color: Colors.white,
-        gradient: LinearGradient(
-          colors: [const Color(0xFF00963F).withOpacity(0.05), Colors.white],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+        color: const Color(0xFF0D1117),
+        image: DecorationImage(
+          image: const NetworkImage("https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2070&auto=format&fit=crop"),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(const Color(0xFF0B0E14).withOpacity(0.85), BlendMode.darken),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00963F).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              children: [
-                const Icon(Icons.verified, color: Color(0xFF00963F), size: 14),
-                Text(
-                  "PROJET FONCIERCHAIN (CG-01) • ÉQUIPE AFRICHAIN SOLUTIONS",
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF00963F),
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Bienvenue sur FoncierChain",
+                    style: GoogleFonts.inter(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Protégez votre patrimoine",
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
-              ],
-            ),
+                child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 20),
+              ),
+            ],
           ),
           const SizedBox(height: 32),
-          Text(
-            "Application mobile citoyenne.",
-            style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: titleFontSize, height: 1.1),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Vérifiez instantanément la propriété d'un terrain à Brazzaville.",
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: const Color(0xFF00963F), 
-              height: 1.2,
-              fontSize: subTitleFontSize,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFF161B22),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-          ),
-          const SizedBox(height: 24),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Text(
-              "Sécurisez votre patrimoine foncier grâce à la technologie blockchain de AfriChain solutions. Éliminez la double attribution des parcelles en un clic.",
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.black54, 
-                height: 1.6,
-                fontSize: screenWidth < 600 ? 14 : 16,
-              ),
-            ),
-          ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            child: Column(
+            child: Row(
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Provider.of<LandService>(context, listen: false).setTabIndex(1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 60),
+                const Icon(Icons.search, color: Colors.white38, size: 20),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Rechercher un ID de parcelle ou un hash...",
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 14),
                   ),
-                  child: const Text("Vérifier une parcelle"),
                 ),
-                const SizedBox(height: 16),
-                OutlinedButton(
-                  onPressed: () {
-                    Provider.of<LandService>(context, listen: false).setTabIndex(2);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: const BorderSide(color: Colors.black12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00963F),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text("Explorer la carte", style: TextStyle(color: Colors.black87)),
+                  child: const Text("Vérifier", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -136,65 +129,147 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+    return Text(
+      title,
+      style: GoogleFonts.inter(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: Colors.white38,
+        letterSpacing: 1.5,
+      ),
+    );
+  }
 
-  Widget _buildStatsRow() {
+  Widget _buildMetricGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 600) {
-          return Column(
-            children: [
-              _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined, isFullWidth: true),
-              const SizedBox(height: 12),
-              _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history, isFullWidth: true),
-              const SizedBox(height: 12),
-              _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined, isFullWidth: true),
-            ],
-          );
-        }
-        return Row(
+        final crossAxisCount = constraints.maxWidth < 600 ? 2 : 4;
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: constraints.maxWidth < 600 ? 1.4 : 1.6,
           children: [
-            Expanded(child: _buildStatCard("12,450+", "PARCELLES ENREGISTRÉES", Icons.home_work_outlined)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildStatCard("100%", "HISTORIQUE IMMUABLE", Icons.history)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildStatCard("Zéro", "LITIGES DE DOUBLE VENTE", Icons.verified_user_outlined)),
+            _buildMetricCard("Titres", "651", Icons.description_outlined, const Color(0xFF00963F), "+12%"),
+            _buildMetricCard("Transferts", "32", Icons.swap_horiz, Colors.blue, "-3%"),
+            _buildMetricCard("Litiges", "14", Icons.warning_amber_rounded, Colors.red, "+0%"),
+            _buildMetricCard("Conformité", "98%", Icons.verified_user_outlined, Colors.purple, "+1.2%"),
           ],
         );
       },
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon, {bool isFullWidth = false}) {
+  Widget _buildMetricCard(String label, String value, IconData icon, Color color, String trend) {
+    final isNegativeTrend = trend.startsWith("-");
     return Container(
-      width: isFullWidth ? double.infinity : null,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00963F).withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: const Color(0xFF00963F), size: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 18),
+              Text(
+                trend,
+                style: GoogleFonts.inter(
+                  color: isNegativeTrend ? Colors.redAccent : Colors.greenAccent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const Spacer(),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: 18),
+            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black38, fontSize: 8),
+            style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRecentActivityList() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: [
+          _buildActivityItem("BZV-45785", "Transfert de propriété", "Il y a 12 min", true),
+          _buildActivityItem("BZV-11209", "Vérification publique", "Il y a 45 min", false),
+          _buildActivityItem("BZV-99032", "Enregistrement bloc", "Il y a 2h", true),
+          _buildActivityItem("BZV-67100", "Authentification notifiée", "Il y a 4h", true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(String id, String type, String time, bool isSuccess) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isSuccess ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isSuccess ? Icons.check_circle_outline : Icons.history,
+          color: isSuccess ? Colors.green : Colors.blue,
+          size: 18,
+        ),
+      ),
+      title: Text(id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(type, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+      trailing: Text(time, style: const TextStyle(color: Colors.white24, fontSize: 10)),
+    );
+  }
+
+  Widget _buildBlockchainStatusRow() {
+    return Row(
+      children: [
+        _buildStatusItem("3.2k", "TPS", Icons.speed),
+        const SizedBox(width: 12),
+        _buildStatusItem("12s", "LATENCE", Icons.timer_outlined),
+        const SizedBox(width: 12),
+        _buildStatusItem("100%", "UPTIME", Icons.cloud_done_outlined),
+      ],
+    );
+  }
+
+  Widget _buildStatusItem(String value, String label, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.03)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white30, size: 16),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+            Text(label, style: const TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
@@ -227,9 +302,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,15 +314,15 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black45),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white38),
               ),
-              Icon(icon, color: Colors.black87, size: 20),
+              Icon(icon, color: Colors.white70, size: 20),
             ],
           ),
           const SizedBox(height: 16),
           Text(
             desc,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5, color: Colors.white70),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
