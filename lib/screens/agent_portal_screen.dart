@@ -119,18 +119,18 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   Widget _buildAgentDashboard(User user) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFF0B0E14),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF161B22),
         elevation: 0,
-        title: Text("Tableau de Bord Agent", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text("Console Administrative", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
         actions: [
-          IconButton(onPressed: _handleLogout, icon: const Icon(Icons.logout, color: Colors.redAccent)),
+          IconButton(onPressed: _handleLogout, icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20)),
           const SizedBox(width: 16),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -138,9 +138,9 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             const SizedBox(height: 32),
             _buildStatsSection(),
             const SizedBox(height: 40),
-            _buildActionSection(),
+            _buildComplianceTable(),
             const SizedBox(height: 40),
-            _buildRecentOpsSection(),
+            _buildActionSection(),
           ],
         ),
       ),
@@ -151,29 +151,18 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Row(
       children: [
         CircleAvatar(
-          radius: 28,
+          radius: 24,
+          backgroundColor: const Color(0xFF00963F),
           backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-          child: user.photoURL == null ? const Icon(Icons.person) : null,
+          child: user.photoURL == null ? const Icon(Icons.person, color: Colors.white) : null,
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Bienvenue,", style: TextStyle(color: Colors.black38, fontSize: 14)),
-            Text(user.displayName ?? "Agent Certifié", style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text("AGENT CERTIFIÉ", style: TextStyle(color: Color(0xFF00963F), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            Text(user.displayName ?? "Session Admin", style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
           ],
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(color: const Color(0xFF00963F).withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-          child: Row(
-            children: [
-              const Icon(Icons.verified, color: Color(0xFF00963F), size: 16),
-              const SizedBox(width: 8),
-              const Text("ID AGENT: CG-BZV-042", style: TextStyle(color: Color(0xFF00963F), fontWeight: FontWeight.bold, fontSize: 11)),
-            ],
-          ),
         ),
       ],
     );
@@ -182,26 +171,98 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   Widget _buildStatsSection() {
     return Row(
       children: [
-        Expanded(child: _buildSmallStatCard("OPÉRATIONS", "142", Icons.auto_graph, Colors.blue)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildSmallStatCard("MUTATIONS", "28", Icons.swap_horiz, Colors.orange)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildSmallStatCard("SIGNALEMENTS", "03", Icons.warning_amber, Colors.red)),
+        _buildMiniAdminCard("Mutations", "42", Colors.green),
+        const SizedBox(width: 12),
+        _buildMiniAdminCard("Audits", "128", Colors.blue),
+        const SizedBox(width: 12),
+        _buildMiniAdminCard("Alertes", "2", Colors.orange),
       ],
     );
   }
 
-  Widget _buildSmallStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildMiniAdminCard(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplianceTable() {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0x0D000000))),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 16),
-          Text(value, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
-          Text(label, style: const TextStyle(color: Colors.black38, fontSize: 10, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("RAPPORT DE CONFORMITÉ DISTRICT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38, letterSpacing: 1)),
+                Icon(Icons.more_horiz, color: Colors.white38, size: 18),
+              ],
+            ),
+          ),
+          _buildTableHeader(),
+          _buildTableRow("Ouenzé", "1,240", "98.2%", true),
+          _buildTableRow("Talangaï", "2,150", "95.5%", true),
+          _buildTableRow("Poto-Poto", "890", "99.1%", true),
+          _buildTableRow("Moungali", "1,420", "82.4%", false),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      color: Colors.white.withOpacity(0.02),
+      child: const Row(
+        children: [
+          Expanded(child: Text("DISTRICT", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
+          Expanded(child: Text("TITRES", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
+          Expanded(child: Text("SCORE", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
+          Text("STATUS", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableRow(String district, String count, String score, bool isSafe) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.white10, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(district, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+          Expanded(child: Text(count, style: const TextStyle(color: Colors.white60, fontSize: 12))),
+          Expanded(child: Text(score, style: TextStyle(color: isSafe ? Colors.greenAccent : Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold))),
+          Icon(
+            isSafe ? Icons.check_circle_outline : Icons.error_outline,
+            color: isSafe ? Colors.green : Colors.orange,
+            size: 16,
+          ),
         ],
       ),
     );

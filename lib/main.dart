@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 import 'screens/verify_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/agent_portal_screen.dart';
+import 'screens/help_center_screen.dart';
 import 'services/land_service.dart';
 
 // FoncierChain Brazzaville - Main Entry Point
@@ -37,51 +38,53 @@ class FoncierChainApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
-          brightness: Brightness.light,
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF0B0E14),
           primaryColor: const Color(0xFF00963F),
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF00963F),
+            brightness: Brightness.dark,
             primary: const Color(0xFF00963F),
             secondary: const Color(0xFF00963F),
             onPrimary: Colors.white,
-            surface: Colors.white,
+            surface: const Color(0xFF161B22),
           ),
           textTheme: GoogleFonts.interTextTheme(
-            ThemeData.light().textTheme,
+            ThemeData.dark().textTheme,
           ).copyWith(
-            displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
-            displayMedium: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
-            displaySmall: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
-            headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
-            bodyLarge: GoogleFonts.inter(fontSize: 16, color: const Color(0xFF1A1A1A)),
-            bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+            displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
+            displayMedium: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
+            displaySmall: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
+            headlineLarge: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+            headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+            bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
             labelSmall: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: const Color(0xFF161B22),
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0x1A000000)),
+              borderSide: const BorderSide(color: Colors.white10),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0x1A000000)),
+              borderSide: const BorderSide(color: Colors.white10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: Color(0xFF00963F), width: 2),
             ),
-            hintStyle: GoogleFonts.inter(color: Colors.black26, fontSize: 14),
+            hintStyle: GoogleFonts.inter(color: Colors.white24, fontSize: 14),
           ),
-          cardTheme: const CardThemeData(
-            color: Colors.white,
+          cardTheme: CardThemeData(
+            color: const Color(0xFF161B22),
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-              side: BorderSide(color: Color(0x0D000000)),
+              borderRadius: const BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
             ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
@@ -112,6 +115,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     const HomeScreen(),
     const VerifyScreen(),
     const MapScreen(),
+    const HelpCenterScreen(),
     const AgentPortalScreen(),
   ];
 
@@ -135,21 +139,22 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget _buildBottomNav(int currentIndex) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
+        color: const Color(0xFF0B0E14),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: _onTabTapped,
         selectedItemColor: const Color(0xFF00963F),
-        unselectedItemColor: Colors.black38,
+        unselectedItemColor: Colors.white38,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0B0E14),
         elevation: 0,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Vérifier'),
+          BottomNavigationBarItem(icon: Icon(Icons.verified_outlined), label: 'Vérifier'),
           BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Carte'),
+          BottomNavigationBarItem(icon: Icon(Icons.help_outline), label: 'Aide'),
           BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings_outlined), label: 'Agent'),
         ],
       ),

@@ -18,10 +18,12 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B0E14),
       body: Stack(
         children: [
           _buildMap(),
           _buildTopOverlay(),
+          _buildSideStats(),
           if (_selectedParcel != null) _buildDetailsPanel(),
           _buildMapControls(),
         ],
@@ -39,8 +41,8 @@ class _MapScreenState extends State<MapScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
+          urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
         ),
         MarkerLayer(
           markers: [
@@ -64,12 +66,12 @@ class _MapScreenState extends State<MapScreen> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00963F).withOpacity(0.2),
+                    color: const Color(0xFF00963F).withOpacity(0.35),
                     border: Border.all(color: const Color(0xFF00963F), width: 2),
                     shape: BoxShape.circle,
                   ),
                   child: const Center(
-                    child: Icon(Icons.location_on, color: Color(0xFF00963F), size: 20),
+                    child: Icon(Icons.verified, color: Colors.white, size: 18),
                   ),
                 ),
               ),
@@ -82,30 +84,125 @@ class _MapScreenState extends State<MapScreen> {
 
   Widget _buildTopOverlay() {
     return Positioned(
-      top: 24,
+      top: 64,
       left: 16,
       right: 16,
-      child: Column(
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5))],
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Rechercher une parcelle ou une zone...",
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                fillColor: Colors.transparent,
-                hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.black26),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15)],
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Rechercher une zone, un ID...",
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  fillColor: Colors.transparent,
+                  hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.white24),
+                ),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161B22),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: const Icon(Icons.filter_list, color: Colors.white70, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSideStats() {
+    final bool isWide = MediaQuery.of(context).size.width > 900;
+    if (!isWide) return const SizedBox.shrink();
+
+    return Positioned(
+      left: 24,
+      top: 130,
+      width: 260,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("STATISTIQUES CADAS.", style: TextStyle(color: Color(0xFF00963F), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            const SizedBox(height: 20),
+            _buildMiniStat("12,450", "Parcelles", Icons.home_work),
+            const SizedBox(height: 16),
+            _buildMiniStat("98%", "Validées", Icons.verified),
+            const SizedBox(height: 16),
+            _buildMiniStat("14", "En litige", Icons.report_problem),
+            const SizedBox(height: 16),
+            _buildMiniStat("156", "En attente", Icons.pending_actions),
+            const SizedBox(height: 24),
+            const Divider(color: Colors.white10),
+            const SizedBox(height: 20),
+            const Text("FILTRES RAPIDES", style: TextStyle(color: Colors.white24, fontSize: 10)),
+            const SizedBox(height: 12),
+            _buildCheckItem("Zone Résidentielle", true),
+            _buildCheckItem("Zone Commerciale", false),
+            _buildCheckItem("Espaces Verts", true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String value, String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white30, size: 16),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckItem(String label, bool value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              color: value ? const Color(0xFF00963F) : Colors.transparent,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: value ? const Color(0xFF00963F) : Colors.white10),
+            ),
+            child: value ? const Icon(Icons.check, color: Colors.white, size: 10) : null,
+          ),
+          const SizedBox(width: 12),
+          Text(label, style: TextStyle(color: value ? Colors.white70 : Colors.white24, fontSize: 11)),
         ],
       ),
     );
@@ -115,16 +212,17 @@ class _MapScreenState extends State<MapScreen> {
     final bool isWide = MediaQuery.of(context).size.width > 900;
 
     return Positioned(
-      top: isWide ? 100 : null,
+      top: isWide ? 130 : null,
       right: isWide ? 24 : 16,
       left: isWide ? null : 16,
-      bottom: 24,
+      bottom: isWide ? null : 24,
       width: isWide ? 380 : null,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF161B22),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 40)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -133,19 +231,19 @@ class _MapScreenState extends State<MapScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0x0D000000))),
+                border: Border(bottom: BorderSide(color: Colors.white10)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                    Text(
                     "DÉTAILS PARCELLE",
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black45),
+                    style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () => setState(() => _selectedParcel = null),
-                    icon: const Icon(Icons.close, size: 18),
-                    style: IconButton.styleFrom(backgroundColor: const Color(0xFFF8FAFC)),
+                    icon: const Icon(Icons.close, size: 18, color: Colors.white38),
+                    style: IconButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.05)),
                   ),
                 ],
               ),
@@ -155,15 +253,15 @@ class _MapScreenState extends State<MapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_selectedParcel!.id, style: Theme.of(context).textTheme.headlineMedium),
+                  Text(_selectedParcel!.id, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                       const SizedBox(width: 8),
-                      Text(
-                        "STATUT: VALIDÉ BLOCKCHAIN",
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.green),
+                      const Text(
+                        "STATUT: VALIDÉ PAR AFRICHAIN",
+                        style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -176,34 +274,37 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 16),
                   _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address),
                   const SizedBox(height: 24),
-                  const Divider(),
+                  const Divider(color: Colors.white10),
                   const SizedBox(height: 16),
-                  Text("CERTIFICAT NUMÉRIQUE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
+                  const Text("CERTIFICAT NUMÉRIQUE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
                     child: Row(
                       children: [
-                        const Icon(Icons.description_outlined, color: Colors.black54),
+                        const Icon(Icons.description_outlined, color: Colors.white38),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              Text("Signé par AfriChain solutions", style: TextStyle(color: Colors.black38, fontSize: 10)),
+                              Text("Signé par AfriChain solutions", style: TextStyle(color: Colors.white24, fontSize: 10)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.open_in_new, size: 14, color: Colors.blue),
+                        const Icon(Icons.open_in_new, size: 14, color: Color(0xFF00963F)),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {},
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 56)),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 56),
+                      backgroundColor: const Color(0xFF00963F),
+                    ),
                     child: const Text("Générer un extrait officiel"),
                   ),
                 ],
@@ -220,15 +321,15 @@ class _MapScreenState extends State<MapScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: Colors.black54, size: 18),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: Colors.white38, size: 18),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A1A1A))),
+            Text(label, style: const TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold)),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
           ],
         ),
       ],
@@ -244,8 +345,6 @@ class _MapScreenState extends State<MapScreen> {
           _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
           const SizedBox(height: 8),
           _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
-          const SizedBox(height: 16),
-          _buildMapButton(Icons.my_location, () {}),
         ],
       ),
     );
@@ -258,11 +357,12 @@ class _MapScreenState extends State<MapScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF161B22),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+          border: Border.all(color: Colors.white10),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)],
         ),
-        child: Icon(icon, size: 20, color: Colors.black87),
+        child: Icon(icon, size: 20, color: Colors.white70),
       ),
     );
   }
