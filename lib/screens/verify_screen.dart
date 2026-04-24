@@ -41,7 +41,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           _buildSecondaryHeader(),

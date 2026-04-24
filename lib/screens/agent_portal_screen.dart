@@ -49,68 +49,115 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   Widget _buildLoginView() {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: Colors.transparent,
       body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(48),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green, Colors.yellow, Colors.red],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161B22).withOpacity(0.9),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
                 ),
-                child: const Icon(Icons.shield, color: Colors.white, size: 32),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                "ESPACE CERTIFIÉ",
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Réservé aux agents du cadastre et notaires certifiés de la République du Congo.",
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 48),
-              if (_isLoading)
-                const CircularProgressIndicator(color: Color(0xFF00963F))
-              else
-                ElevatedButton(
-                  onPressed: _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 60),
-                    backgroundColor: const Color(0xFF1A1A1A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00963F).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF00963F).withOpacity(0.2)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.security, size: 20),
-                      const SizedBox(width: 12),
-                      Text("Connexion Authentifiée", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                    ],
+                  child: const Icon(Icons.vpn_key_outlined, color: Color(0xFF00963F), size: 32),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  "ACCÈS RESTREINT",
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
-              const SizedBox(height: 24),
-              const Text(
-                "Sécurisé par AfriChain solutions Blockchain Technology",
-                style: TextStyle(color: Colors.black26, fontSize: 10, fontWeight: FontWeight.bold),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  "Authentification requise pour les agents assermentés du Cadastre National.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: Colors.white38,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                if (_isLoading)
+                  const CircularProgressIndicator(color: Color(0xFF00963F))
+                else ...[
+                  ElevatedButton(
+                    onPressed: _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 64),
+                      backgroundColor: const Color(0xFF00963F),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.fingerprint, size: 24),
+                        const SizedBox(width: 12),
+                        Text(
+                          "Continuer avec Google",
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      "Besoin d'assistance technique ?",
+                      style: TextStyle(color: Colors.white24, fontSize: 12),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 40),
+                const Divider(color: Colors.white10),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.verified_user, color: Colors.white12, size: 14),
+                    const SizedBox(width: 8),
+                    Text(
+                      "PROTOCOLE AFRICHAIN v2.0",
+                      style: GoogleFonts.inter(
+                        color: Colors.white12,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -119,7 +166,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   Widget _buildAgentDashboard(User user) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: const Color(0xFF161B22),
         elevation: 0,
@@ -325,24 +372,26 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0x0D000000))),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("DERNIÈRES OPÉRATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1, color: Colors.black)),
+              Text("DERNIÈRES OPÉRATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1, color: Colors.white)),
               TextButton(onPressed: () {}, child: const Text("Voir tout", style: TextStyle(color: Color(0xFF00963F)))),
             ],
           ),
           const SizedBox(height: 16),
           _buildOpRow("Mutation Parcelle BZV-457", "Validé", "Il y a 10 min"),
-          const Divider(height: 32),
+          const Divider(height: 32, color: Colors.white10),
           _buildOpRow("Enregistrement Nouveau Titre", "Validé", "Il y a 2h"),
-          const Divider(height: 32),
-          _buildOpRow("Enregistrement Nouveau Titre", "Validé", "Il y a 2h"),
-          const Divider(height: 32),
+          const Divider(height: 32, color: Colors.white10),
           _buildOpRow("Modification Propriétaire", "En attente", "Hier"),
         ],
       ),
@@ -354,16 +403,19 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.history, size: 18, color: Colors.black45),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.history, size: 18, color: Colors.white38),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
-              Text(time, style: const TextStyle(color: Colors.black26, fontSize: 11)),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+              Text(time, style: const TextStyle(color: Colors.white24, fontSize: 11)),
             ],
           ),
         ),

@@ -9,6 +9,7 @@ import 'screens/map_screen.dart';
 import 'screens/agent_portal_screen.dart';
 import 'screens/help_center_screen.dart';
 import 'services/land_service.dart';
+import 'widgets/neural_background.dart';
 
 // FoncierChain Brazzaville - Main Entry Point
 // Optimized for mobile-first land registry transparency
@@ -128,9 +129,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final navService = Provider.of<LandService>(context);
     
     return Scaffold(
-      body: IndexedStack(
-        index: navService.currentTabIndex,
-        children: _screens,
+      body: Stack(
+        children: [
+          const IgnorePointer(child: NeuralBackground()),
+          IndexedStack(
+            index: navService.currentTabIndex,
+            children: _screens,
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(navService.currentTabIndex),
     );

@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -51,11 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(24, screenWidth < 600 ? 60 : 80, 24, 40),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1117),
+        color: Colors.transparent,
         image: DecorationImage(
           image: const NetworkImage("https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2070&auto=format&fit=crop"),
           fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(const Color(0xFF0B0E14).withOpacity(0.85), BlendMode.darken),
+          colorFilter: ColorFilter.mode(const Color(0xFF0B0E14).withOpacity(0.8), BlendMode.darken),
         ),
       ),
       child: Column(
