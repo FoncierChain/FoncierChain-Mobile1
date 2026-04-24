@@ -84,7 +84,7 @@ class FoncierChainApp extends StatelessWidget {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: const BorderRadius.all(Radius.circular(16)),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+              side: BorderSide(color: Colors.white.withOpacity(0.05)),
             ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(

@@ -272,16 +272,31 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("ACTIONS RAPIDES", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1, color: Colors.black)),
+        Text("ACTIONS RAPIDES", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: Colors.white38)),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: _buildActionButton("Nouvelle Mutation", Icons.add_business_outlined, const Color(0xFF00963F))),
-            const SizedBox(width: 16),
-            Expanded(child: _buildActionButton("Générer Certificat", Icons.description_outlined, const Color(0xFF1A1A1A))),
-            const SizedBox(width: 16),
-            Expanded(child: _buildActionButton("Rapport Mensuel", Icons.assessment_outlined, Colors.black38)),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 600) {
+              return Column(
+                children: [
+                  _buildActionButton("Nouvelle Mutation", Icons.add_business_outlined, const Color(0xFF00963F)),
+                  const SizedBox(height: 12),
+                  _buildActionButton("Générer Certificat", Icons.description_outlined, const Color(0xFF161B22)),
+                  const SizedBox(height: 12),
+                  _buildActionButton("Rapport Mensuel", Icons.assessment_outlined, const Color(0xFF161B22)),
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: _buildActionButton("Nouvelle Mutation", Icons.add_business_outlined, const Color(0xFF00963F))),
+                const SizedBox(width: 16),
+                Expanded(child: _buildActionButton("Générer Certificat", Icons.description_outlined, const Color(0xFF161B22))),
+                const SizedBox(width: 16),
+                Expanded(child: _buildActionButton("Rapport Mensuel", Icons.assessment_outlined, const Color(0xFF161B22))),
+              ],
+            );
+          }
         ),
       ],
     );
@@ -289,8 +304,13 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   Widget _buildActionButton(String label, IconData icon, Color bgColor) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: bgColor, 
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Column(
         children: [
           Icon(icon, color: Colors.white, size: 24),
