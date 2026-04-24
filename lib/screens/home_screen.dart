@@ -61,8 +61,11 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 12,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,9 +75,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.inter(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    "Protégez votre patrimoine",
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      "Protégez votre patrimoine",
+                      style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                    ),
                   ),
                 ],
               ),
@@ -105,23 +111,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: "Rechercher un ID de parcelle ou un hash...",
+                      hintText: "Rechercher un ID ou un hash...",
+                      hintStyle: TextStyle(fontSize: 13, color: Colors.white24),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF00963F),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text("Vérifier", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
+                screenWidth < 400 
+                  ? const Icon(Icons.check_circle, color: Color(0xFF00963F))
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00963F),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text("Vérifier", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
               ],
             ),
           ),
@@ -129,6 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _buildSectionHeader(String title) {
     return Text(
       title,
       style: GoogleFonts.inter(
@@ -242,14 +253,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBlockchainStatusRow() {
-    return Row(
-      children: [
-        _buildStatusItem("3.2k", "TPS", Icons.speed),
-        const SizedBox(width: 12),
-        _buildStatusItem("12s", "LATENCE", Icons.timer_outlined),
-        const SizedBox(width: 12),
-        _buildStatusItem("100%", "UPTIME", Icons.cloud_done_outlined),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            _buildStatusItem("3.2k", "TPS", Icons.speed),
+            const SizedBox(width: 8),
+            _buildStatusItem("12s", "LATENCE", Icons.timer_outlined),
+            const SizedBox(width: 8),
+            _buildStatusItem("100%", "UPTIME", Icons.cloud_done_outlined),
+          ],
+        );
+      }
     );
   }
 
