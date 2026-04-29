@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'api_service.dart';
 
 class Parcel {
   final String id;
@@ -67,6 +68,9 @@ class LandService with ChangeNotifier {
   // Instance Firestore avec le databaseId spécifique si nécessaire
   late final FirebaseFirestore _db;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  late final ApiService _api;
+
+  ApiService get api => _api;
 
   int _currentTabIndex = 0;
   int get currentTabIndex => _currentTabIndex;
@@ -81,6 +85,10 @@ class LandService with ChangeNotifier {
       app: Firebase.app(),
       databaseId: 'ai-studio-66c2610a-a070-4530-8833-e441559e6519',
     );
+
+    // Initialisation du service API avec la baseUrl du backend
+    _api = ApiService(baseUrl: 'http://localhost:8000/api/v1/');
+
     // Écoute les changements d'état d'authentification
     _auth.authStateChanges().listen((User? user) {
       notifyListeners();
