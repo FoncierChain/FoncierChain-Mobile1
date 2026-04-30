@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/land_service.dart';
+import '../services/api_service.dart';
 
 class AgentPortalScreen extends StatefulWidget {
   const AgentPortalScreen({super.key});
@@ -13,16 +13,29 @@ class AgentPortalScreen extends StatefulWidget {
 
 class _AgentPortalScreenState extends State<AgentPortalScreen> {
   bool _isLoading = false;
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   void _handleLogin() async {
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Veuillez remplir tous les champs")),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      final service = Provider.of<LandService>(context, listen: false);
-      await service.loginWithGoogle();
+      final res = await ApiService.login(_usernameController.text, _passwordController.text);
+      if (res.containsKey('token')) {
+        final service = Provider.of<LandService>(context, listen: false);
+        // Note: For demo purposes, we still use LandService state but login via API
+        await service.loginWithGoogle(); 
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Échec de la connexion: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("Échec de la connexion API: $e"), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -83,24 +96,13 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                 const SizedBox(height: 32),
                 Text(
                   "ACCÈS RESTREINT",
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  "Authentification requise pour les agents assermentés du Cadastre National.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    color: Colors.white38,
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
+                _buildSimpleField(_usernameController, "Nom d'utilisateur", Icons.person_outline),
+                const SizedBox(height: 16),
+                _buildSimpleField(_passwordController, "Mot de passe", Icons.lock_outline, obscure: true),
+                const SizedBox(height: 32),
                 if (_isLoading)
                   const CircularProgressIndicator(color: Color(0xFF00963F))
                 else ...[
@@ -110,51 +112,17 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                       minimumSize: const Size(double.infinity, 64),
                       backgroundColor: const Color(0xFF00963F),
                       foregroundColor: Colors.white,
-                      elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.fingerprint, size: 24),
-                        const SizedBox(width: 12),
-                        Text(
-                          "Continuer avec Google",
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "Besoin d'assistance technique ?",
-                      style: TextStyle(color: Colors.white24, fontSize: 12),
-                    ),
+                    child: const Text("Connexion au Ledger", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ],
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
                 const Divider(color: Colors.white10),
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.verified_user, color: Colors.white12, size: 14),
-                    const SizedBox(width: 8),
-                    Text(
-                      "PROTOCOLE AFRICHAIN v2.0",
-                      style: GoogleFonts.inter(
-                        color: Colors.white12,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
+                Text(
+                  "SYSTÈME SÉCURISÉ BRAZZAVILLE",
+                  style: GoogleFonts.inter(color: Colors.white12, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
                 ),
               ],
             ),
@@ -163,6 +131,22 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       ),
     );
   }
+
+  Widget _buildSimpleField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 20, color: Colors.white24),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        fillColor: Colors.white.withOpacity(0.05),
+        filled: true,
+      ),
+    );
+  }
+
 
   Widget _buildAgentDashboard(User user) {
     final service = Provider.of<LandService>(context);

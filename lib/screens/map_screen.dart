@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/land_service.dart';
+import '../services/api_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -14,6 +15,25 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   Parcel? _selectedParcel;
   final MapController _mapController = MapController();
+  List<dynamic> _mapData = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMapData();
+  }
+
+  Future<void> _loadMapData() async {
+    setState(() => _isLoading = true);
+    final data = await ApiService.getMapData();
+    if (mounted) {
+      setState(() {
+        _mapData = data;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +46,10 @@ class _MapScreenState extends State<MapScreen> {
           _buildSideStats(),
           if (_selectedParcel != null) _buildDetailsPanel(),
           _buildMapControls(),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00963F)),
+            ),
         ],
       ),
     );
@@ -45,42 +69,60 @@ class _MapScreenState extends State<MapScreen> {
           subdomains: const ['a', 'b', 'c', 'd'],
         ),
         MarkerLayer(
-          markers: [
-            Marker(
-              point: const LatLng(-4.2634, 15.2422),
+          markers: _mapData.map((data) {
+            final lat = (data['lat'] as num).toDouble();
+            final lng = (data['lng'] as num).toDouble();
+            return Marker(
+              point: LatLng(lat, lng),
               width: 40,
               height: 40,
               child: GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedParcel = Parcel(
-                      id: "BZV-45785-SECURE",
-                      ownerName: "Jean-Paul Makosso",
-                      surface: 450.0,
-                      address: "Avenue des Armées, Ouenzé",
-                      usage: "Résidentiel",
-                      hash: "0x892bcf921a83018...3e12",
-                      status: "Validé",
+                      id: data['id'],
+                      ownerName: data['owner'],
+                      surface: (data['area'] as num).toDouble(),
+                      address: "${data['neighborhood']}, ${data['city']}",
+                      usage: data['usage'],
+                      hash: "0x${data['id'].hashCode.toRadixString(16)}...${data['status']}",
+                      status: data['status'],
                     );
                   });
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00963F).withOpacity(0.35),
-                    border: Border.all(color: const Color(0xFF00963F), width: 2),
+                    color: _getStatusColor(data['status']).withOpacity(0.35),
+                    border: Border.all(color: _getStatusColor(data['status']), width: 2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(
-                    child: Icon(Icons.verified, color: Colors.white, size: 18),
+                  child: Center(
+                    child: Icon(
+                      data['status'] == "FINALIZED" ? Icons.verified : Icons.location_on,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            );
+          }).toList(),
         ),
       ],
     );
   }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'FINALIZED':
+        return Colors.green;
+      case 'VALIDATED':
+        return Colors.blue;
+      default:
+        return Colors.orange;
+    }
+  }
+
 
   Widget _buildTopOverlay() {
     return Positioned(

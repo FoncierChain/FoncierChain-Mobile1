@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/land_service.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,36 +13,60 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Map<String, dynamic>? _stats;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    final stats = await ApiService.getStats();
+    if (mounted) {
+      setState(() {
+        _stats = stats;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHero(),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildMetricGrid(),
-                  const SizedBox(height: 32),
-                  _buildSectionHeader("OPÉRATIONS RÉCENTES"),
-                  const SizedBox(height: 16),
-                  _buildRecentActivityList(),
-                  const SizedBox(height: 32),
-                  _buildSectionHeader("PERFORMANCE BLOCKCHAIN"),
-                  const SizedBox(height: 16),
-                  _buildBlockchainStatusRow(),
-                  const SizedBox(height: 32),
-                  _buildFeaturePortals(),
-                  const SizedBox(height: 48),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: const Color(0xFF00963F),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildHero(),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMetricGrid(),
+                    const SizedBox(height: 32),
+                    _buildSectionHeader("OPÉRATIONS RÉCENTES"),
+                    const SizedBox(height: 16),
+                    _buildRecentActivityList(),
+                    const SizedBox(height: 32),
+                    _buildSectionHeader("PERFORMANCE BLOCKCHAIN"),
+                    const SizedBox(height: 16),
+                    _buildBlockchainStatusRow(),
+                    const SizedBox(height: 32),
+                    _buildFeaturePortals(),
+                    const SizedBox(height: 48),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -186,15 +211,16 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisSpacing: 12,
           childAspectRatio: constraints.maxWidth < 600 ? 1.4 : 1.6,
           children: [
-            _buildMetricCard("Titres", "651", Icons.description_outlined, const Color(0xFF00963F), "+12%"),
-            _buildMetricCard("Transferts", "32", Icons.swap_horiz, Colors.blue, "-3%"),
-            _buildMetricCard("Litiges", "14", Icons.warning_amber_rounded, Colors.red, "+0%"),
-            _buildMetricCard("Conformité", "98%", Icons.verified_user_outlined, Colors.purple, "+1.2%"),
+            _buildMetricCard("Titres", _stats?['total_parcels']?.toString() ?? "...", Icons.description_outlined, const Color(0xFF00963F), "+12%"),
+            _buildMetricCard("Finalisés", _stats?['finalized_parcels']?.toString() ?? "...", Icons.verified, Colors.blue, "+5%"),
+            _buildMetricCard("Surfaces", "${_stats?['total_area']?.toStringAsFixed(0) ?? "..."}", Icons.square_foot, Colors.orange, "+2%"),
+            _buildMetricCard("Fiabilité", "${_stats?['reliability'] ?? "..."}%", Icons.security, Colors.purple, "+0.5%"),
           ],
         );
       },
     );
   }
+
 
   Widget _buildMetricCard(String label, String value, IconData icon, Color color, String trend) {
     final isNegativeTrend = trend.startsWith("-");

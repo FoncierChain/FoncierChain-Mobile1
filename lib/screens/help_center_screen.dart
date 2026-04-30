@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'api_dev_screen.dart';
 import 'deployment_guide_screen.dart';
+import 'registry_screen.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
@@ -78,6 +79,13 @@ class HelpCenterScreen extends StatelessWidget {
           Icons.settings_system_daydream_outlined, 
           Colors.blueAccent,
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeploymentGuideScreen())),
+        ),
+        _buildHelpCard(
+          "Registre Public", 
+          "Consulter le ledger blockchain en temps réel.", 
+          Icons.account_balance_wallet_outlined, 
+          Colors.greenAccent,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PublicRegistryScreen())),
         ),
       ],
     );

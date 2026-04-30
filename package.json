@@ -4,8 +4,17 @@
   "description": "Application mobile citoyenne de vérification foncière immuable (Flutter implementation)",
   "private": true,
   "scripts": {
-    "start": "echo 'This is now a Flutter project. Export code to build for Android/iOS.'",
-    "dev": "echo 'Flutter project active. Use flutter run locally for development.'",
-    "build": "echo 'Build successful (Flutter Web managed by platform)'"
+    "start": "tsx server.ts",
+    "dev": "tsx server.ts",
+    "build": "flutter build web && echo 'Build successful'"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

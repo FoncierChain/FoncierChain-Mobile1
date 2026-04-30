@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/land_service.dart';
+import '../services/api_service.dart';
 
 class VerifyScreen extends StatefulWidget {
   const VerifyScreen({super.key});
@@ -40,20 +41,45 @@ class _VerifyScreenState extends State<VerifyScreen> {
       _selectedParcel = null;
     });
 
-    final service = Provider.of<LandService>(context, listen: false);
-    final results = await service.searchParcels(_controller.text.trim());
+    try {
+      // Fetch from API instead of local land service search
+      final mapData = await ApiService.getMapData();
+      final query = _controller.text.trim().toLowerCase();
+      
+      final results = mapData.where((p) => 
+        p['id'].toString().toLowerCase().contains(query) || 
+        p['owner'].toString().toLowerCase().contains(query) ||
+        p['neighborhood'].toString().toLowerCase().contains(query)
+      ).map((item) => Parcel(
+        id: item['id'],
+        ownerName: item['owner'],
+        neighborhood: item['neighborhood'],
+        city: item['city'],
+        address: "${item['neighborhood']}, ${item['city']}",
+        cadastralId: "CAD-${item['id']}",
+        area: (item['area'] as num).toDouble(),
+        usage: item['usage'],
+        status: item['status'],
+        txId: "0x${item['id'].hashCode.toRadixString(16)}blockchainflow",
+      )).toList();
 
-    setState(() {
-      _isSearching = false;
-      if (results.isEmpty) {
-        _error = "Aucun titre foncier trouvé pour cette recherche.";
-      } else {
-        _foundParcels = results;
-        if (results.length == 1) {
-          _selectedParcel = results.first;
+      setState(() {
+        _isSearching = false;
+        if (results.isEmpty) {
+          _error = "Aucun titre foncier trouvé pour cette recherche.";
+        } else {
+          _foundParcels = results;
+          if (results.length == 1) {
+            _selectedParcel = results.first;
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      setState(() {
+        _isSearching = false;
+        _error = "Erreur de connexion au registre blockchain.";
+      });
+    }
   }
 
   @override
@@ -65,6 +91,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
           _buildSecondaryHeader(),
           Expanded(
             child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,6 +118,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       ),
     );
   }
+
 
   Widget _buildSecondaryHeader() {
     final double screenWidth = MediaQuery.of(context).size.width;
