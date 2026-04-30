@@ -1,13 +1,16 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Le plugin Flutter doit être appliqué après Android et Kotlin
     id("dev.flutter.flutter-gradle-plugin")
+    // Ajout du plugin Google Services pour Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.foncier_chain"
-    compileSdk = flutter.compileSdkVersion
+    // Utilisation du nouveau namespace officiel
+    namespace = "com.africhain.fancierchain"
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,25 +23,37 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.foncier_chain"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        applicationId = "com.africhain.fancierchain"
+        // Flutter gère dynamiquement ces versions via local.properties
+        minSdk = 21
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86_64"))
+        }
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            // Optimisation pour la production
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("debug") // À remplacer par ton propre keystore plus tard
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Intégration de Firebase via BOM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }

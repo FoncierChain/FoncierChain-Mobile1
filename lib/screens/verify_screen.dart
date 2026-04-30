@@ -12,9 +12,23 @@ class VerifyScreen extends StatefulWidget {
 
 class _VerifyScreenState extends State<VerifyScreen> {
   final TextEditingController _controller = TextEditingController();
-  Parcel? _foundParcel;
+  List<Parcel> _foundParcels = [];
+  Parcel? _selectedParcel;
   bool _isSearching = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final service = Provider.of<LandService>(context, listen: false);
+      if (service.pendingSearchQuery != null) {
+        _controller.text = service.pendingSearchQuery!;
+        service.clearPendingSearch();
+        _handleSearch();
+      }
+    });
+  }
 
   void _handleSearch() async {
     if (_controller.text.isEmpty) return;
@@ -22,18 +36,22 @@ class _VerifyScreenState extends State<VerifyScreen> {
     setState(() {
       _isSearching = true;
       _error = null;
-      _foundParcel = null;
+      _foundParcels = [];
+      _selectedParcel = null;
     });
 
     final service = Provider.of<LandService>(context, listen: false);
-    final parcel = await service.verifyParcel(_controller.text.trim());
+    final results = await service.searchParcels(_controller.text.trim());
 
     setState(() {
       _isSearching = false;
-      if (parcel == null) {
-        _error = "Aucun titre foncier trouvé pour cet identifiant.";
+      if (results.isEmpty) {
+        _error = "Aucun titre foncier trouvé pour cette recherche.";
       } else {
-        _foundParcel = parcel;
+        _foundParcels = results;
+        if (results.length == 1) {
+          _selectedParcel = results.first;
+        }
       }
     });
   }
@@ -57,8 +75,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     const Center(child: CircularProgressIndicator(color: Color(0xFF00963F)))
                   else if (_error != null)
                     _buildErrorState()
-                  else if (_foundParcel != null)
-                    _buildParcelResult(_foundParcel!)
+                  else if (_selectedParcel != null)
+                    _buildParcelDetail(_selectedParcel!)
+                  else if (_foundParcels.isNotEmpty)
+                    _buildParcelList()
                   else
                     _buildIdleState(),
                   const SizedBox(height: 48),
@@ -115,15 +135,15 @@ class _VerifyScreenState extends State<VerifyScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "ENTREZ L'IDENTIFIANT DE PARCELLE",
+            "ENTREZ L'IDENTIFIANT OU L'ADRESSE",
             style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
             decoration: const InputDecoration(
-              hintText: "ex: BZV-45785",
-              prefixIcon: Icon(Icons.qr_code_2_outlined, color: Color(0xFF00963F)),
+              hintText: "ex: BZV-45785 ou Rue Poto-Poto",
+              prefixIcon: Icon(Icons.search, color: Color(0xFF00963F)),
             ),
             onSubmitted: (_) => _handleSearch(),
           ),
@@ -144,9 +164,46 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildParcelResult(Parcel parcel) {
+  Widget _buildParcelList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "${_foundParcels.length} RÉSULTATS TROUVÉS",
+          style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+        ),
+        const SizedBox(height: 16),
+        ..._foundParcels.map((p) => Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161B22),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: ListTile(
+            onTap: () => setState(() => _selectedParcel = p),
+            title: Text(p.address, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            subtitle: Text(p.id, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+          ),
+        )).toList(),
+      ],
+    );
+  }
+
+  Widget _buildParcelDetail(Parcel parcel) {
     return Column(
       children: [
+        if (_foundParcels.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: TextButton.icon(
+              onPressed: () => setState(() => _selectedParcel = null),
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text("Retour aux résultats"),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF00963F)),
+            ),
+          ),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -160,23 +217,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildDetailLabel("RÉSULTAT DE L'AUDIT", parcel.id, isBig: true),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.green.withOpacity(0.2)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.verified, color: Colors.green, size: 12),
-                        SizedBox(width: 6),
-                        Text("IMMUABLE", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
+                  _buildDetailLabel("TITRE FONCIER", parcel.id, isBig: true),
+                  _buildStatusBadge(parcel.status),
                 ],
               ),
               const Padding(
@@ -185,36 +227,142 @@ class _VerifyScreenState extends State<VerifyScreen> {
               ),
               _buildDetailRow([
                 _buildDetailLabel("PROPRIÉTAIRE", parcel.ownerName),
-                _buildDetailLabel("CADASTRE", parcel.address),
+                _buildDetailLabel("QUARTIER", parcel.neighborhood),
               ]),
               const SizedBox(height: 24),
               _buildDetailRow([
-                _buildDetailLabel("USAGE", parcel.usage),
-                _buildDetailLabel("COORDONNÉES", "BZV-Zone 4"),
+                _buildDetailLabel("CADASTRE", parcel.cadastralId),
+                _buildDetailLabel("SUPERFICIE", "${parcel.area} m²"),
               ]),
+              const SizedBox(height: 24),
+              _buildDetailLabel("ADRESSE", parcel.address),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Divider(color: Colors.white10),
               ),
-              const Text("EMPREINTE NUMÉRIQUE SHA-256", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+              const Text("VALIDATION BLOCKCHAIN", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildValidationStep("Signature V2 (Géomètre)", parcel.signatureV2 != null, parcel.signatureV2),
+              _buildValidationStep("Signature V3 (Communauté)", parcel.signatureV3 != null, parcel.signatureV3),
+              _buildValidationStep("Signature V1 (État)", parcel.signatureV1 != null, parcel.signatureV1),
+              if (parcel.txId != null) ...[
+                const SizedBox(height: 24),
+                const Text("HASH DE TRANSACTION", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    parcel.txId!,
+                    style: GoogleFonts.jetBrainsMono(color: const Color(0xFF00963F), fontSize: 10),
+                  ),
                 ),
-                child: Text(
-                  parcel.hash,
-                  style: GoogleFonts.jetBrainsMono(color: const Color(0xFF00963F).withOpacity(0.8), fontSize: 11),
-                ),
+              ],
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: Colors.white10),
+              ),
+              Text("HISTORIQUE DES MUTATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38)),
+              const SizedBox(height: 16),
+              StreamBuilder<List<TransactionHistory>>(
+                stream: Provider.of<LandService>(context).getHistory(parcel.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: LinearProgressIndicator(color: Color(0xFF00963F)));
+                  }
+                  final history = snapshot.data ?? [];
+                  if (history.isEmpty) {
+                    return const Text("Aucun historique disponible.", style: TextStyle(color: Colors.white24, fontSize: 12));
+                  }
+                  return Column(
+                    children: history.map((h) => _buildHistoryRow(h)).toList(),
+                  );
+                },
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color = Colors.orange;
+    String label = status;
+    if (status == 'FINALIZED') {
+      color = Colors.green;
+      label = "FINALISÉ";
+    } else if (status == 'COMMUNITY_VALIDATED') {
+      color = Colors.cyan;
+      label = "VALIDÉ (COMM)";
+    } else if (status == 'DRAFT') {
+      color = Colors.orange;
+      label = "DRAFT";
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildValidationStep(String label, bool isSigned, String? signature) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(isSigned ? Icons.check_circle : Icons.radio_button_unchecked, 
+               color: isSigned ? Colors.green : Colors.white10, size: 16),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: isSigned ? Colors.white : Colors.white24, fontSize: 12, fontWeight: FontWeight.bold)),
+                if (isSigned && signature != null)
+                  Text(signature, style: GoogleFonts.jetBrainsMono(color: Colors.white24, fontSize: 9), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryRow(TransactionHistory h) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 8, height: 8,
+            margin: const EdgeInsets.only(top: 4),
+            decoration: const BoxDecoration(color: Color(0xFF00963F), shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(h.type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                const SizedBox(height: 2),
+                Text("${h.previousOwner} → ${h.newOwner}", style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                Text(h.date.toString().substring(0, 16), style: const TextStyle(color: Colors.white10, fontSize: 9)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -290,7 +438,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         children: [
           const Icon(Icons.error_outline, color: Colors.red),
           const SizedBox(width: 16),
-          Text(_error!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          Expanded(child: Text(_error!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
         ],
       ),
     );

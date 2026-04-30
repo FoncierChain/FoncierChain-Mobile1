@@ -19,51 +19,84 @@ service cloud.firestore {
        return request.auth != null;
     }
 
-    function isAdmin() {
-       return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
-         (request.auth.token.email == "hamsterlecurieux25@gmail.com" && request.auth.token.email_verified == true));
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isAgent() {
+    function hasRole(role) {
+      return isAuthenticated() && (getUserData().role == role || getUserData().role == 'ADMIN');
+    }
+
+    function isAdmin() {
        return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'agent' || isAdmin());
+        (getUserData().role == 'ADMIN' || 
+         (request.auth.token.email == "hamsterlecurieux25@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isOwner(userId) {
        return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isValidParcel(data) {
-      return data.id is string && data.id.size() > 0 && data.id.size() < 50 &&
-             data.ownerName is string && data.ownerName.size() > 0 && data.ownerName.size() < 100 &&
-             data.surface is number && data.surface > 0 &&
-             data.usage in ['Résidentiel', 'Commercial', 'Agricole', 'Industriel'] &&
-             data.address is string && data.address.size() > 0 &&
-             data.coordinates is string &&
-             data.status in ['validé', 'en_attente'] &&
-             data.hash is string && data.hash.size() > 0;
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidParcelSchema(data) {
+      return data.id is string && data.id.size() > 0 && 
+             data.ownerName is string && data.ownerName.size() > 0 &&
+             data.city is string && data.city == 'Brazzaville' &&
+             data.neighborhood is string &&
+             data.cadastralId is string &&
+             data.area is number && data.area > 0 &&
+             data.status in ['DRAFT', 'COMMUNITY_VALIDATED', 'FINALIZED'];
     }
 
     // Rules
     match /users/{uid} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow update: if isOwner(uid) || isAdmin();
     }
 
     match /parcels/{parcelId} {
-      // Les citoyens peuvent vérifier n'importe quelle parcelle publiquement (lecture seule)
       allow read: if true; 
       
-      // Seuls les agents peuvent enregistrer ou mettre à jour des parcelles
-      allow create: if isAgent() && isValidParcel(request.resource.data);
-      allow update: if isAgent() && isValidParcel(request.resource.data) && 
-                      request.resource.data.id == resource.data.id; // ID immuable
+      // Step 1: Initiation by GEOMETRE
+      allow create: if hasRole('GEOMETRE') && 
+                      isValidParcelSchema(request.resource.data) &&
+                      request.resource.data.status == 'DRAFT' &&
+                      request.resource.data.signatureV2 != null;
+
+      // Steps 2 & 3: Validation and Finalization
+      allow update: if isAuthenticated() && (
+        // Community Validation
+        (hasRole('COMMUNITY') && 
+         resource.data.status == 'DRAFT' && 
+         request.resource.data.status == 'COMMUNITY_VALIDATED' &&
+         request.resource.data.signatureV3 != null &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'signatureV3', 'lastUpdate'])) 
+        ||
+        // Finalization by AGENT
+        (hasRole('AGENT') && 
+         resource.data.status == 'COMMUNITY_VALIDATED' && 
+         request.resource.data.status == 'FINALIZED' &&
+         request.resource.data.signatureV1 != null &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'signatureV1', 'lastUpdate', 'txId']))
+        ||
+        // Transfer of Property (only allowed if FINALIZED)
+        (hasRole('AGENT') &&
+         resource.data.status == 'FINALIZED' &&
+         request.resource.data.ownerId != resource.data.ownerId &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerId', 'ownerName', 'lastUpdate', 'txId']))
+        ||
+        // Admin override
+        isAdmin()
+      );
       
       match /history/{transferId} {
         allow read: if true;
-        allow create: if isAgent();
-        allow update, delete: if false; // L'historique est immuable
+        allow create: if hasRole('AGENT') || hasRole('GEOMETRE');
+        allow update, delete: if false;
       }
     }
   }
