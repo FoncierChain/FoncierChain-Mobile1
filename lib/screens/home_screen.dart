@@ -11,6 +11,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,28 +110,49 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Icon(Icons.search, color: Colors.white38, size: 20),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Rechercher un ID ou un hash...",
+                    controller: _searchController,
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        Provider.of<LandService>(context, listen: false).setTabIndex(1, searchQuery: val.trim());
+                      }
+                    },
+                    decoration: const InputDecoration(
+                      hintText: "Rechercher un ID ou une adresse...",
                       hintStyle: TextStyle(fontSize: 13, color: Colors.white24),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
+                      fillColor: Colors.transparent,
                     ),
-                    style: TextStyle(color: Colors.white, fontSize: 13),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
                 screenWidth < 400 
-                  ? const Icon(Icons.check_circle, color: Color(0xFF00963F))
-                  : Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00963F),
-                        borderRadius: BorderRadius.circular(8),
+                  ? IconButton(
+                      icon: const Icon(Icons.check_circle, color: Color(0xFF00963F)),
+                      onPressed: () {
+                        if (_searchController.text.trim().isNotEmpty) {
+                          Provider.of<LandService>(context, listen: false).setTabIndex(1, searchQuery: _searchController.text.trim());
+                        }
+                      },
+                    )
+                  : InkWell(
+                      onTap: () {
+                        if (_searchController.text.trim().isNotEmpty) {
+                          Provider.of<LandService>(context, listen: false).setTabIndex(1, searchQuery: _searchController.text.trim());
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00963F),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text("Vérifier", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
-                      child: const Text("Vérifier", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
               ],
             ),

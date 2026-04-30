@@ -2,22 +2,29 @@
   "entities": {
     "Parcel": {
       "title": "Parcel",
-      "description": "Représentation numérique d'une parcelle foncière à Brazzaville.",
+      "description": "Représentation numérique d'une parcelle foncière à Brazzaville avec protocole de validation à 3 signatures.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Identifiant unique de la parcelle (ex: BZV-POTO-001)" },
-        "ownerName": { "type": "string", "description": "Nom complet du propriétaire légal" },
-        "ownerId": { "type": "string", "description": "ID unique du propriétaire (CNI / Passeport)" },
-        "surface": { "type": "number", "description": "Superficie en mètres carrés" },
-        "usage": { "type": "string", "enum": ["Résidentiel", "Commercial", "Agricole", "Industriel"], "description": "Type d'usage du terrain" },
-        "address": { "type": "string", "description": "Adresse physique complète" },
-        "coordinates": { "type": "string", "description": "Coordonnées GPS (lat, lng pairs)" },
-        "status": { "type": "string", "enum": ["validé", "en_attente"], "description": "Statut de validation du titre" },
-        "hash": { "type": "string", "description": "Empreinte cryptographique de l'acte" },
-        "lastUpdate": { "type": "string", "format": "date-time" },
-        "agentUid": { "type": "string", "description": "UID de l'agent ayant enregistré la parcelle" }
+        "ownerName": { "type": "string", "description": "Nom complet du propriétaire actuel" },
+        "ownerId": { "type": "string", "description": "ID souverain (SSI) du propriétaire" },
+        "city": { "type": "string", "description": "Ville (ex: Brazzaville)" },
+        "neighborhood": { "type": "string", "description": "Quartier (ex: Poto-Poto, Moungali)" },
+        "cadastralId": { "type": "string", "description": "Référence cadastrale officielle" },
+        "area": { "type": "number", "description": "Superficie en mètres carrés" },
+        "price": { "type": "number", "description": "Valeur estimée ou prix d'achat" },
+        "usage": { "type": "string", "enum": ["Résidentiel", "Commercial", "Agricole", "Industriel"] },
+        "address": { "type": "string" },
+        "coordinates": { "type": "string" },
+        "status": { "type": "string", "enum": ["DRAFT", "COMMUNITY_VALIDATED", "FINALIZED"], "description": "Statut dans le workflow blockchain" },
+        "signatureV1": { "type": "string", "description": "Signature de l'Agent Foncier (Finalisation)" },
+        "signatureV2": { "type": "string", "description": "Signature du Géomètre Agréé (Initiation)" },
+        "signatureV3": { "type": "string", "description": "Signature du Représentant Communautaire (Validation)" },
+        "documentHash": { "type": "string", "description": "Hash des documents physiques numérisés" },
+        "txId": { "type": "string", "description": "Hash de transaction blockchain (simulé)" },
+        "lastUpdate": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "ownerName", "surface", "usage", "address", "coordinates", "status", "hash"]
+      "required": ["id", "ownerName", "city", "neighborhood", "cadastralId", "area", "status", "signatureV2", "documentHash"]
     },
     "Transfer": {
       "title": "Transfer",
@@ -35,13 +42,14 @@
     },
     "User": {
       "title": "User",
-      "description": "Profil utilisateur (citoyen ou agent).",
+      "description": "Profil utilisateur avec rôles institutionnels FancierChain.",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
         "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["citizen", "agent", "admin"] },
-        "displayName": { "type": "string" }
+        "role": { "type": "string", "enum": ["CITIZEN", "AGENT", "GEOMETRE", "COMMUNITY", "ADMIN"] },
+        "displayName": { "type": "string" },
+        "organization": { "type": "string", "description": "L'institution d'appartenance" }
       },
       "required": ["uid", "email", "role"]
     }

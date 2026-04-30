@@ -9,31 +9,61 @@ import 'api_service.dart';
 class Parcel {
   final String id;
   final String ownerName;
-  final double surface;
+  final String ownerId;
+  final String city;
+  final String neighborhood;
+  final String cadastralId;
+  final double area;
+  final double price;
   final String usage;
   final String address;
-  final String hash;
   final String status;
+  final String? signatureV1;
+  final String? signatureV2;
+  final String? signatureV3;
+  final String? documentHash;
+  final String? txId;
+  final DateTime lastUpdate;
 
   Parcel({
     required this.id,
     required this.ownerName,
-    required this.surface,
+    required this.ownerId,
+    required this.city,
+    required this.neighborhood,
+    required this.cadastralId,
+    required this.area,
+    required this.price,
     required this.usage,
     required this.address,
-    required this.hash,
     required this.status,
+    this.signatureV1,
+    this.signatureV2,
+    this.signatureV3,
+    this.documentHash,
+    this.txId,
+    required this.lastUpdate,
   });
 
   factory Parcel.fromFirestore(Map<String, dynamic> data) {
     return Parcel(
       id: data['id'] ?? '',
       ownerName: data['ownerName'] ?? '',
-      surface: (data['surface'] ?? 0).toDouble(),
+      ownerId: data['ownerId'] ?? '',
+      city: data['city'] ?? 'Brazzaville',
+      neighborhood: data['neighborhood'] ?? '',
+      cadastralId: data['cadastralId'] ?? '',
+      area: (data['area'] ?? 0).toDouble(),
+      price: (data['price'] ?? 0).toDouble(),
       usage: data['usage'] ?? '',
       address: data['address'] ?? '',
-      hash: data['hash'] ?? '',
-      status: data['status'] ?? 'en_attente',
+      status: data['status'] ?? 'DRAFT',
+      signatureV1: data['signatureV1'],
+      signatureV2: data['signatureV2'],
+      signatureV3: data['signatureV3'],
+      documentHash: data['documentHash'],
+      txId: data['txId'],
+      lastUpdate: (data['lastUpdate'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }
@@ -64,6 +94,15 @@ class TransactionHistory {
   }
 }
 
+enum OperationType {
+  CREATE,
+  UPDATE,
+  DELETE,
+  LIST,
+  GET,
+  WRITE,
+}
+
 class LandService with ChangeNotifier {
   // Instance Firestore avec le databaseId spécifique si nécessaire
   late final FirebaseFirestore _db;
@@ -74,10 +113,32 @@ class LandService with ChangeNotifier {
 
   int _currentTabIndex = 0;
   int get currentTabIndex => _currentTabIndex;
+  String? _pendingSearchQuery;
+  String? get pendingSearchQuery => _pendingSearchQuery;
 
-  void setTabIndex(int index) {
-    _currentTabIndex = index;
+  // Rôle de simulation (uniquement pour le développement/démo)
+  String? _simulatedRole;
+  String? get simulatedRole => _simulatedRole;
+
+  void setSimulatedRole(String? role) {
+    _simulatedRole = role;
     notifyListeners();
+  }
+
+  // Rôle réel de l'utilisateur en DB
+  String _userRole = 'CITIZEN';
+  String get userRole => _simulatedRole ?? _userRole;
+
+  void setTabIndex(int index, {String? searchQuery}) {
+    _currentTabIndex = index;
+    if (searchQuery != null) {
+      _pendingSearchQuery = searchQuery;
+    }
+    notifyListeners();
+  }
+
+  void clearPendingSearch() {
+    _pendingSearchQuery = null;
   }
 
   LandService() {
@@ -91,8 +152,59 @@ class LandService with ChangeNotifier {
 
     // Écoute les changements d'état d'authentification
     _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        _syncUserProfile(user);
+      } else {
+        _userRole = 'CITIZEN';
+        _simulatedRole = null;
+      }
       notifyListeners();
     });
+  }
+
+  Future<void> _syncUserProfile(User user) async {
+    try {
+      final docRef = _db.collection('users').doc(user.uid);
+      final doc = await docRef.get();
+      
+      if (!doc.exists) {
+        // Premier utilisateur (Admin si email correspond)
+        String role = 'CITIZEN';
+        if (user.email == 'hamsterlecurieux25@gmail.com') {
+          role = 'ADMIN';
+        }
+        
+        await docRef.set({
+          'uid': user.uid,
+          'email': user.email,
+          'role': role,
+          'displayName': user.displayName ?? 'Utilisateur AfriChain',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        _userRole = role;
+      } else {
+        _userRole = doc.data()?['role'] ?? 'CITIZEN';
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erreur de synchronisation profil: $e");
+    }
+  }
+
+  void _handleFirestoreError(dynamic error, OperationType op, String path) {
+    final Map<String, dynamic> errInfo = {
+      'error': error.toString(),
+      'operationType': op.toString().split('.').last.toLowerCase(),
+      'path': path,
+      'authInfo': {
+        'userId': _auth.currentUser?.uid,
+        'email': _auth.currentUser?.email,
+        'emailVerified': _auth.currentUser?.emailVerified,
+      }
+    };
+    final jsonErr = jsonEncode(errInfo);
+    debugPrint("Firestore Error Debug: $jsonErr");
+    throw Exception(jsonErr);
   }
 
   User? get currentUser => _auth.currentUser;
@@ -104,29 +216,146 @@ class LandService with ChangeNotifier {
     return sha256.convert(bytes).toString();
   }
 
-  // Recherche une parcelle par son ID
-  Future<Parcel?> verifyParcel(String id) async {
+  // Recherche une parcelle par son ID ou son Adresse
+  Future<List<Parcel>> searchParcels(String query) async {
+    const String path = 'parcels';
     try {
-      final q = await _db.collection('parcels').where('id', isEqualTo: id.toUpperCase()).get();
-      if (q.docs.isNotEmpty) {
-        return Parcel.fromFirestore(q.docs.first.data());
+      // Recherche par ID exacte
+      final qId = await _db.collection(path).where('id', isEqualTo: query.toUpperCase()).get();
+      if (qId.docs.isNotEmpty) {
+        return qId.docs.map((doc) => Parcel.fromFirestore(doc.data())).toList();
       }
-      return null;
+
+      // Recherche par Adresse
+      final qAddr = await _db.collection(path)
+          .where('address', isGreaterThanOrEqualTo: query)
+          .where('address', isLessThanOrEqualTo: query + '\uf8ff')
+          .get();
+      
+      return qAddr.docs.map((doc) => Parcel.fromFirestore(doc.data())).toList();
     } catch (e) {
-      debugPrint("Error verifying parcel: $e");
-      return null;
+      _handleFirestoreError(e, OperationType.LIST, path);
+      return [];
     }
   }
 
-  // Récupère l'historique des transactions
-  Stream<List<TransactionHistory>> getHistory(String parcelId) {
-    return _db
-        .collection('parcels')
-        .doc(parcelId)
-        .collection('history')
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map((doc) => TransactionHistory.fromFirestore(doc.data())).toList());
+  // ETAPE 1: Initiation Draft (Géomètre)
+  Future<void> initiateDraft({
+    required String parcelId,
+    required String ownerName,
+    required String ownerId,
+    required String neighborhood,
+    required String cadastralId,
+    required double area,
+    required double price,
+    required String usage,
+    required String address,
+    required String signatureV2,
+    required String documentHash,
+  }) async {
+    const String path = 'parcels';
+    final docRef = _db.collection(path).doc(parcelId);
+    
+    try {
+      // Check if exists to reject double attribution
+      final doc = await docRef.get();
+      if (doc.exists) {
+        throw Exception("DOUBLE_ATTRIBUTION: Cette parcelle ($parcelId) est déjà enregistrée.");
+      }
+
+      await docRef.set({
+        'id': parcelId,
+        'ownerName': ownerName,
+        'ownerId': ownerId,
+        'city': 'Brazzaville',
+        'neighborhood': neighborhood,
+        'cadastralId': cadastralId,
+        'area': area,
+        'price': price,
+        'usage': usage,
+        'address': address,
+        'status': 'DRAFT',
+        'signatureV2': signatureV2,
+        'documentHash': documentHash,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      _handleFirestoreError(e, OperationType.WRITE, "$path/$parcelId");
+    }
+  }
+
+  // ETAPE 2: Validation Communautaire
+  Future<void> validateCommunity(String parcelId, String signatureV3) async {
+    const String path = 'parcels';
+    try {
+      await _db.collection(path).doc(parcelId).update({
+        'status': 'COMMUNITY_VALIDATED',
+        'signatureV3': signatureV3,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      _handleFirestoreError(e, OperationType.UPDATE, "$path/$parcelId");
+    }
+  }
+
+  // ETAPE 3: Finalisation État
+  Future<void> finalizeLand(String parcelId, String signatureV1) async {
+    const String path = 'parcels';
+    try {
+      final txId = generateSecureHash(parcelId, "FINALIZED");
+      await _db.collection(path).doc(parcelId).update({
+        'status': 'FINALIZED',
+        'signatureV1': signatureV1,
+        'txId': txId,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      });
+
+      // Record initial history
+      await _db.collection(path).doc(parcelId).collection('history').add({
+        'previousOwner': 'ÉTAT',
+        'newOwner': 'PREMIER PROPRIÉTAIRE',
+        'date': DateTime.now().toIso8601String(),
+        'type': 'IMMATRICULATION',
+        'documentHash': txId,
+      });
+    } catch (e) {
+      _handleFirestoreError(e, OperationType.UPDATE, "$path/$parcelId");
+    }
+  }
+
+  // TRANSFERT DE PROPRIÉTÉ
+  Future<void> transferProperty(String parcelId, String newOwnerName, String newOwnerId) async {
+    const String path = 'parcels';
+    try {
+      final parcelDoc = await _db.collection(path).doc(parcelId).get();
+      if (!parcelDoc.exists) throw Exception("Parcelle introuvable");
+      
+      final parcel = Parcel.fromFirestore(parcelDoc.data()!);
+      if (parcel.status != 'FINALIZED') {
+        throw Exception("PROTOCOLE_DENIED: Seules les parcelles finalisées peuvent être transférées.");
+      }
+
+      final txId = generateSecureHash(parcelId, newOwnerName);
+      final previousOwner = parcel.ownerName;
+
+      await _db.collection(path).doc(parcelId).update({
+        'ownerName': newOwnerName,
+        'ownerId': newOwnerId,
+        'txId': txId,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      });
+
+      // Add to history
+      await _db.collection(path).doc(parcelId).collection('history').add({
+        'previousOwner': previousOwner,
+        'newOwner': newOwnerName,
+        'date': DateTime.now().toIso8601String(),
+        'type': 'MUTATION',
+        'documentHash': txId,
+      });
+    } catch (e) {
+      _handleFirestoreError(e, OperationType.UPDATE, "$path/$parcelId");
+    }
   }
 
   // Login via Google (Pour Web/Chrome)

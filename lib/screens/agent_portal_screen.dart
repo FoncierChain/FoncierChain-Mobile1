@@ -165,6 +165,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   }
 
   Widget _buildAgentDashboard(User user) {
+    final service = Provider.of<LandService>(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -182,15 +183,84 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcomeHeader(user),
+            const SizedBox(height: 24),
+            _buildSimulationConsole(service),
             const SizedBox(height: 32),
             _buildStatsSection(),
             const SizedBox(height: 40),
             _buildComplianceTable(),
             const SizedBox(height: 40),
             _buildActionSection(),
+            const SizedBox(height: 40),
+            _buildRecentOpsSection(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSimulationConsole(LandService service) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.amber.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bug_report, color: Colors.amber, size: 18),
+              const SizedBox(width: 12),
+              Text(
+                "CONSOLE DE SIMULATION (DÉMO)",
+                style: GoogleFonts.jetBrainsMono(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: Colors.amber,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "Changez de rôle institutionnel pour tester le workflow à 3 signatures :",
+            style: TextStyle(color: Colors.white38, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildRoleChip(service, "GEOMETRE", "1. Initiation"),
+              _buildRoleChip(service, "COMMUNITY", "2. Validation"),
+              _buildRoleChip(service, "AGENT", "3. Finalisation / Mutation"),
+              _buildRoleChip(service, "ADMIN", "Admin"),
+              _buildRoleChip(service, null, "Citoyen (Réel)"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleChip(LandService service, String? role, String label) {
+    final isSelected = service.simulatedRole == role;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (val) => service.setSimulatedRole(role),
+      backgroundColor: Colors.transparent,
+      selectedColor: Colors.amber,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.black : Colors.white60,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+      ),
+      side: BorderSide(color: isSelected ? Colors.amber : Colors.white10),
     );
   }
 
@@ -319,28 +389,43 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("ACTIONS RAPIDES", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: Colors.white38)),
+        Text("OPÉRATIONS BLOCKCHAIN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: Colors.white38)),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth < 600) {
-              return Column(
-                children: [
-                  _buildActionButton("Nouvelle Mutation", Icons.add_business_outlined, const Color(0xFF00963F)),
-                  const SizedBox(height: 12),
-                  _buildActionButton("Générer Certificat", Icons.description_outlined, const Color(0xFF161B22)),
-                  const SizedBox(height: 12),
-                  _buildActionButton("Rapport Mensuel", Icons.assessment_outlined, const Color(0xFF161B22)),
-                ],
-              );
-            }
-            return Row(
+            final isMobile = constraints.maxWidth < 600;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                Expanded(child: _buildActionButton("Nouvelle Mutation", Icons.add_business_outlined, const Color(0xFF00963F))),
-                const SizedBox(width: 16),
-                Expanded(child: _buildActionButton("Générer Certificat", Icons.description_outlined, const Color(0xFF161B22))),
-                const SizedBox(width: 16),
-                Expanded(child: _buildActionButton("Rapport Mensuel", Icons.assessment_outlined, const Color(0xFF161B22))),
+                _buildActionButton(
+                  "1. Initier Draft", 
+                  Icons.add_location_alt_outlined, 
+                  const Color(0xFF00963F),
+                  onTap: () => _showInitiateDraftDialog(context),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                _buildActionButton(
+                  "2. Validation Comm.", 
+                  Icons.how_to_reg_outlined, 
+                  const Color(0xFF161B22),
+                  onTap: () => _showValidateCommunityDialog(context),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                _buildActionButton(
+                  "3. Finalisation État", 
+                  Icons.verified_user_outlined, 
+                  const Color(0xFF161B22),
+                  onTap: () => _showFinalizeStateDialog(context),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                _buildActionButton(
+                  "Mutation (Transfert)", 
+                  Icons.swap_horiz_outlined, 
+                  const Color(0xFF161B22),
+                  onTap: () => _showTransferDialog(context),
+                  width: isMobile ? double.infinity : 150,
+                ),
               ],
             );
           }
@@ -349,21 +434,224 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color bgColor) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: bgColor, 
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 12),
-          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+  void _showInitiateDraftDialog(BuildContext context) {
+    final idController = TextEditingController();
+    final ownerController = TextEditingController();
+    final ownerIdController = TextEditingController();
+    final neighborhoodController = TextEditingController();
+    final cadastralController = TextEditingController();
+    final addressController = TextEditingController();
+    final areaController = TextEditingController();
+    final priceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text("ÉTAPE 1 : Initiation Draft", style: TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDialogField(idController, "ID Parcelle (ex: BZV-123)"),
+              _buildDialogField(ownerController, "Nom du Propriétaire"),
+              _buildDialogField(ownerIdController, "ID Souverain (SSI)"),
+              _buildDialogField(neighborhoodController, "Quartier (Brazzaville)"),
+              _buildDialogField(cadastralController, "ID Cadastral"),
+              _buildDialogField(addressController, "Adresse Physique"),
+              _buildDialogField(areaController, "Superficie (m²)", isNumber: true),
+              _buildDialogField(priceController, "Prix estimé (FCFA)", isNumber: true),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
+            onPressed: () async {
+              try {
+                final service = Provider.of<LandService>(context, listen: false);
+                await service.initiateDraft(
+                  parcelId: idController.text.trim().toUpperCase(),
+                  ownerName: ownerController.text.trim(),
+                  ownerId: ownerIdController.text.trim(),
+                  neighborhood: neighborhoodController.text.trim(),
+                  cadastralId: cadastralController.text.trim(),
+                  area: double.parse(areaController.text),
+                  price: double.parse(priceController.text),
+                  usage: "Résidentiel",
+                  address: addressController.text.trim(),
+                  signatureV2: "SIG_GEOMETRE_${idController.text.toUpperCase()}_CERT",
+                  documentHash: "HASH_DOC_INIT_${DateTime.now().millisecondsSinceEpoch}",
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Draft initié avec succès")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+              }
+            }, 
+            child: const Text("Signer & Envoyer")
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showValidateCommunityDialog(BuildContext context) {
+    final idController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text("ÉTAPE 2 : Validation Communautaire", style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle à valider"),
+            const Text("Le représentant confirme l'occupation réelle du terrain.", style: TextStyle(color: Colors.white38, fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+            onPressed: () async {
+              try {
+                final service = Provider.of<LandService>(context, listen: false);
+                await service.validateCommunity(
+                  idController.text.trim().toUpperCase(), 
+                  "SIG_COMMUNITY_CHEF_BZV_${idController.text.toUpperCase()}"
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Validation communautaire effectuée")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+              }
+            }, 
+            child: const Text("Valider")
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalizeStateDialog(BuildContext context) {
+    final idController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text("ÉTAPE 3 : Finalisation État", style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle à finaliser"),
+            const Text("L'Agent Foncier de l'État appose sa signature finale.", style: TextStyle(color: Colors.white38, fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
+            onPressed: () async {
+              try {
+                final service = Provider.of<LandService>(context, listen: false);
+                await service.finalizeLand(
+                  idController.text.trim().toUpperCase(), 
+                  "SIG_STATE_AGENT_OFFICIAL_${idController.text.toUpperCase()}"
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Titre foncier FINALISÉ et ancré on-chain")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+              }
+            }, 
+            child: const Text("Finaliser")
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTransferDialog(BuildContext context) {
+    final idController = TextEditingController();
+    final newOwnerNameController = TextEditingController();
+    final newOwnerIdController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text("Mutation (Transfert)", style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle"),
+            _buildDialogField(newOwnerNameController, "Nouveau Propriétaire"),
+            _buildDialogField(newOwnerIdController, "Nouveau ID Souverain"),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            onPressed: () async {
+              try {
+                final service = Provider.of<LandService>(context, listen: false);
+                await service.transferProperty(
+                  idController.text.trim().toUpperCase(),
+                  newOwnerNameController.text.trim(),
+                  newOwnerIdController.text.trim(),
+                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Transfert effectué avec succès")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+              }
+            }, 
+            child: const Text("Effectuer le Transfert")
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogField(TextEditingController controller, String label, {bool isNumber = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white38),
+          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00963F))),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String label, IconData icon, Color bgColor, {required VoidCallback onTap, double? width}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+        decoration: BoxDecoration(
+          color: bgColor, 
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 12),
+            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'api_dev_screen.dart';
+import 'deployment_guide_screen.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
@@ -59,31 +61,48 @@ class HelpCenterScreen extends StatelessWidget {
       mainAxisSpacing: 16,
       childAspectRatio: 1.3,
       children: [
-        _buildHelpCard("Guide de démarrage", "Apprenez les bases de la vérification foncière.", Icons.auto_stories_outlined, Colors.blue),
-        _buildHelpCard("Concepts Blockchain", "Comprendre l'immuabilité des titres.", Icons.account_tree_outlined, Colors.purple),
-        _buildHelpCard("Support Technique", "Problème avec l'identifiant de parcelle ?", Icons.build_circle_outlined, Colors.orange),
-        _buildHelpCard("Sécurité & Vie privée", "Comment vos données sont protégées.", Icons.admin_panel_settings_outlined, Colors.green),
+        _buildHelpCard("Protocole Brazzaville", "Guide en 3 étapes : Draft, Validation, Finalisation.", Icons.auto_stories_outlined, Colors.blue),
+        _buildHelpCard("Identité Souveraine", "Comment valider votre certificat X.509.", Icons.fingerprint, Colors.cyan),
+        _buildHelpCard("Rôles & Permissions", "Agent, Géomètre, Communauté : qui fait quoi ?", Icons.people_outline, Colors.orange),
+        _buildHelpCard("Paiements On-Chain", "Processus de sécurisation des fonds d'enchères.", Icons.account_balance_wallet_outlined, Colors.green),
+        _buildHelpCard(
+          "API & Intégration", 
+          "Documentation technique pour les développeurs tiers.", 
+          Icons.code, 
+          Colors.amber,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const APIDocScreen())),
+        ),
+        _buildHelpCard(
+          "Déploiement Local", 
+          "Procédure d'installation Docker & Blockchain.", 
+          Icons.settings_system_daydream_outlined, 
+          Colors.blueAccent,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeploymentGuideScreen())),
+        ),
       ],
     );
   }
 
-  Widget _buildHelpCard(String title, String subtitle, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const Spacer(),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 10)),
-        ],
+  Widget _buildHelpCard(String title, String subtitle, IconData icon, Color color, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B22),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const Spacer(),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          ],
+        ),
       ),
     );
   }
@@ -91,9 +110,11 @@ class HelpCenterScreen extends StatelessWidget {
   Widget _buildFAQSection() {
     return Column(
       children: [
-        _buildFAQItem("Qu'est-ce qu'un hash blockchain ?", "Un hash est un identifiant unique généré par AfriChain solutions pour garantir qu'un titre n'a jamais été modifié."),
-        _buildFAQItem("Comment vérifier ma parcelle ?", "Entrez simplement l'identifiant BZV-XXXX fourni par le cadastre national dans l'onglet vérification."),
-        _buildFAQItem("L'application remplace-t-elle le papier ?", "L'application affiche le certificat numérique qui fait foi, mais le titre physique reste la base légale actuelle."),
+        _buildFAQItem("Quel est le rôle du 'Géomètre Agréé' ?", "Le géomètre est le seul autorisé à initier un 'Draft'. Il valide les mesures techniques et l'ID cadastral avant toute soumission sur la blockchain."),
+        _buildFAQItem("Pourquoi une validation communautaire ?", "Pour résoudre le 'problème de l'oracle', un Représentant Communautaire doit confirmer physiquement l'occupation du terrain afin d'éviter les doubles titres."),
+        _buildFAQItem("Qu'est-ce que le statut 'FINALIZED' ?", "Cela signifie que l'Agent Foncier de l'État a apposé sa signature finale (V1). Le titre est alors immuable et un NFT représentatif est minté."),
+        _buildFAQItem("Comment fonctionnent les enchères ?", "Les enchères sont sécurisées par Hyperledger Fabric. Le transfert de propriété est atomique et ne se produit qu'une fois le paiement finalisé on-chain."),
+        _buildFAQItem("Mes données personnelles sont-elles publiques ?", "Non. FancierChain utilise le partitionnement des données. Seules les métadonnées de la parcelle sont publiques, votre identité reste souveraine et cryptée."),
       ],
     );
   }
