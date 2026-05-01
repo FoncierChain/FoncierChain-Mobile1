@@ -183,7 +183,7 @@ class LandService with ChangeNotifier {
     }
   }
 
-  void signOut() {
+  Future<void> signOut() async {
     _currentUser = null;
     _userRole = 'CITIZEN';
     _simulatedRole = null;
@@ -210,7 +210,13 @@ class LandService with ChangeNotifier {
     try {
       final history = await ApiService.getLandHistory(parcelId);
       if (history is List) {
-        return history.map((item) => TransactionHistory.fromMap(item)).toList();
+        return history.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
+      } else if (history is Map) {
+         // Handle if the API returns a map with a list inside
+         final dynamic data = history['history'] ?? history['data'] ?? [];
+         if (data is List) {
+           return data.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
+         }
       }
     } catch (e) {
       debugPrint("Erreur History: $e");
