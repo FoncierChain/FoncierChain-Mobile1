@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'https://foncierchain-backend1-1.onrender.com/api/v1';
 
   // --- Auth ---
   static Future<Map<String, dynamic>> login(String username, String password) async {

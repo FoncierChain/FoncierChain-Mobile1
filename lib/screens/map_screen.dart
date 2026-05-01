@@ -323,11 +323,22 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                      Container(
+                        width: 8, 
+                        height: 8, 
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(_selectedParcel!.status), 
+                          shape: BoxShape.circle
+                        )
+                      ),
                       const SizedBox(width: 8),
-                      const Text(
-                        "STATUT: VALIDÉ PAR FONCIERCHAIN",
-                        style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                      Text(
+                        "STATUT: ${_selectedParcel!.status.replaceAll('_', ' ')}",
+                        style: TextStyle(
+                          color: _getStatusColor(_selectedParcel!.status), 
+                          fontSize: 10, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ],
                   ),
