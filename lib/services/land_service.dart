@@ -221,28 +221,28 @@ class LandService with ChangeNotifier {
 
   Future<void> initiateDraft({
     required String parcelId,
-    required String ownerName,
     required String ownerId,
+    required String city,
     required String neighborhood,
     required String cadastralId,
     required double area,
     required double price,
-    required String usage,
     required String address,
     required String signatureV2,
     required String documentHash,
   }) async {
     try {
       await ApiService.createDraft({
-        'parcelId': parcelId,
-        'owner': ownerName,
+        'id': parcelId,
+        'owner': ownerId,
+        'city': city,
         'neighborhood': neighborhood,
+        'address': address,
+        'area': area,
         'cadastralId': cadastralId,
-        'surface': area,
+        'documentHash': documentHash,
+        'signatureV2': signatureV2,
         'price': price,
-        'usage': usage,
-        'signature_v2': signatureV2,
-        'hash': documentHash,
       });
       notifyListeners();
     } catch (e) {

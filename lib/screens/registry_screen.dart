@@ -35,12 +35,21 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final navService = Provider.of<LandService>(context);
+    final isDark = navService.isDarkMode;
+    final backgroundColor = isDark ? const Color(0xFF0D1117) : Colors.grey[50];
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("REGISTRE PUBLIC (LEDGER)", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold)),
+        title: Text("REGISTRE PUBLIC (LEDGER)", style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _loadRegistry,
@@ -51,11 +60,11 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatsRow(),
+              _buildStatsRow(isDark),
               const SizedBox(height: 32),
               Text(
                 "HISTORIQUE DES BLOCS",
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white38, letterSpacing: 1.2),
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1.2),
               ),
               const SizedBox(height: 16),
               if (_isLoading)
@@ -67,7 +76,7 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
                   itemCount: _ledger.length,
                   itemBuilder: (context, index) {
                     final block = _ledger[index];
-                    return _buildBlockItem(block);
+                    return _buildBlockItem(block, isDark);
                   },
                 ),
                 const SizedBox(height: 60),
@@ -75,7 +84,7 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
                   child: Text(
                     "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
                     style: GoogleFonts.inter(
-                      color: Colors.white12,
+                      color: isDark ? Colors.white12 : Colors.black12,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2,
@@ -90,53 +99,64 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(bool isDark) {
     return Row(
       children: [
-        _buildStatCard("Titres", _metrics['total_titles']?.toString() ?? "...", Colors.green),
+        _buildStatCard("Titres", _metrics['total_titles']?.toString() ?? "...", Colors.green, isDark),
         const SizedBox(width: 12),
-        _buildStatCard("Transferts 24h", _metrics['transfers_24h']?.toString() ?? "...", Colors.blue),
+        _buildStatCard("Transferts 24h", _metrics['transfers_24h']?.toString() ?? "...", Colors.blue, isDark),
         const SizedBox(width: 12),
-        _buildStatCard("Blocs Actifs", _metrics['active_blocks']?.toString() ?? "...", Colors.purple),
+        _buildStatCard("Blocs Actifs", _metrics['active_blocks']?.toString() ?? "...", Colors.purple, isDark),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color) {
+  Widget _buildStatCard(String label, String value, Color color, bool isDark) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: isDark ? const Color(0xFF161B22) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [
+            if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: Colors.white30, fontSize: 9, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: isDark ? Colors.white30 : Colors.black30, fontSize: 9, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBlockItem(dynamic block) {
+  Widget _buildBlockItem(dynamic block, bool isDark) {
+    final blockColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white24 : Colors.black26;
+    final timeColor = isDark ? Colors.white12 : Colors.black12;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: blockColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.03)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.03) : Colors.black12),
+        boxShadow: [
+          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: (isDark ? Colors.black : Colors.grey[200])!.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.layers_outlined, color: Color(0xFF00963F), size: 20),
           ),
           const SizedBox(width: 16),
@@ -147,7 +167,7 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("BLOC #${block['block_number']}", style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text("BLOC #${block['block_number']}", style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 13, color: textColor)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
@@ -156,11 +176,11 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(block['tx_id'], style: GoogleFonts.jetBrainsMono(color: Colors.white24, fontSize: 10), overflow: TextOverflow.ellipsis),
+                Text(block['tx_id'], style: GoogleFonts.jetBrainsMono(color: subColor, fontSize: 10), overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(
                   DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(block['timestamp'])),
-                  style: const TextStyle(color: Colors.white10, fontSize: 9),
+                  style: TextStyle(color: timeColor, fontSize: 9),
                 ),
               ],
             ),

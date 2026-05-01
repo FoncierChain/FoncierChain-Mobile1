@@ -51,15 +51,19 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   Widget build(BuildContext context) {
     final service = Provider.of<LandService>(context);
     final user = service.currentUser;
+    final isDark = service.isDarkMode;
 
     if (user == null) {
-      return _buildLoginView();
+      return _buildLoginView(isDark);
     }
 
-    return _buildAgentDashboard(user);
+    return _buildAgentDashboard(user, isDark);
   }
 
-  Widget _buildLoginView() {
+  Widget _buildLoginView(bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22).withOpacity(0.9) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Center(
@@ -69,12 +73,12 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             constraints: const BoxConstraints(maxWidth: 420),
             padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(
-              color: const Color(0xFF161B22).withOpacity(0.9),
+              color: containerColor,
               borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color: (isDark ? Colors.black : Colors.black12).withOpacity(isDark ? 0.4 : 0.1),
                   blurRadius: 40,
                   offset: const Offset(0, 20),
                 ),
@@ -95,12 +99,12 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                 const SizedBox(height: 32),
                 Text(
                   "ACCÈS RESTREINT",
-                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+                  style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: textColor, letterSpacing: -0.5),
                 ),
                 const SizedBox(height: 32),
-                _buildSimpleField(_usernameController, "Nom d'utilisateur", Icons.person_outline),
+                _buildSimpleField(_usernameController, "Nom d'utilisateur", Icons.person_outline, isDark),
                 const SizedBox(height: 16),
-                _buildSimpleField(_passwordController, "Mot de passe", Icons.lock_outline, obscure: true),
+                _buildSimpleField(_passwordController, "Mot de passe", Icons.lock_outline, isDark, obscure: true),
                 const SizedBox(height: 32),
                 if (_isLoading)
                   const CircularProgressIndicator(color: Color(0xFF00963F))
@@ -117,11 +121,11 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const Divider(color: Colors.white10),
+                Divider(color: isDark ? Colors.white10 : Colors.black12),
                 const SizedBox(height: 24),
                 Text(
                   "SYSTÈME SÉCURISÉ BRAZZAVILLE",
-                  style: GoogleFonts.inter(color: Colors.white12, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  style: GoogleFonts.inter(color: isDark ? Colors.white12 : Colors.black12, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
                 ),
               ],
             ),
@@ -131,57 +135,62 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildSimpleField(TextEditingController controller, String hint, IconData icon, {bool obscure = false}) {
+  Widget _buildSimpleField(TextEditingController controller, String hint, IconData icon, bool isDark, {bool obscure = false}) {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, size: 20, color: Colors.white24),
+        hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black26),
+        prefixIcon: Icon(icon, size: 20, color: isDark ? Colors.white24 : Colors.black26),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
         filled: true,
       ),
     );
   }
 
 
-  Widget _buildAgentDashboard(AppUser user) {
+  Widget _buildAgentDashboard(AppUser user, bool isDark) {
     final service = Provider.of<LandService>(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
         elevation: 0,
-        title: Text("Console Administrative", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text("Console Administrative", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
         actions: [
           IconButton(onPressed: _handleLogout, icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20)),
           const SizedBox(width: 16),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeHeader(user),
+            _buildWelcomeHeader(user, isDark),
             const SizedBox(height: 24),
-            _buildSimulationConsole(service),
+            _buildSimulationConsole(service, isDark),
             const SizedBox(height: 32),
-            _buildStatsSection(),
+            _buildStatsSection(isDark),
             const SizedBox(height: 40),
-            _buildComplianceTable(),
+            _buildComplianceTable(isDark),
             const SizedBox(height: 40),
-            _buildActionSection(),
+            _buildActionSection(isDark),
             const SizedBox(height: 40),
-            _buildRecentOpsSection(),
+            _buildRecentOpsSection(isDark),
             const SizedBox(height: 60),
             Center(
               child: Text(
                 "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
                 style: GoogleFonts.inter(
-                  color: Colors.white12,
+                  color: isDark ? Colors.white12 : Colors.black12,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
@@ -195,11 +204,11 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildSimulationConsole(LandService service) {
+  Widget _buildSimulationConsole(LandService service, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.05),
+        color: isDark ? Colors.amber.withOpacity(0.05) : Colors.amber.withOpacity(0.02),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.amber.withOpacity(0.2)),
       ),
@@ -222,20 +231,20 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             "Changez de rôle institutionnel pour tester le workflow à 3 signatures :",
-            style: TextStyle(color: Colors.white38, fontSize: 12),
+            style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildRoleChip(service, "GEOMETRE", "1. Initiation"),
-              _buildRoleChip(service, "COMMUNITY", "2. Validation"),
-              _buildRoleChip(service, "AGENT", "3. Finalisation / Mutation"),
-              _buildRoleChip(service, "ADMIN", "Admin"),
-              _buildRoleChip(service, null, "Citoyen (Réel)"),
+              _buildRoleChip(service, "GEOMETRE", "1. Initiation", isDark),
+              _buildRoleChip(service, "COMMUNITY", "2. Validation", isDark),
+              _buildRoleChip(service, "AGENT", "3. Finalisation / Mutation", isDark),
+              _buildRoleChip(service, "ADMIN", "Admin", isDark),
+              _buildRoleChip(service, null, "Citoyen (Réel)", isDark),
             ],
           ),
         ],
@@ -243,7 +252,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildRoleChip(LandService service, String? role, String label) {
+  Widget _buildRoleChip(LandService service, String? role, String label, bool isDark) {
     final isSelected = service.simulatedRole == role;
     return ChoiceChip(
       label: Text(label),
@@ -252,15 +261,15 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       backgroundColor: Colors.transparent,
       selectedColor: Colors.amber,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.black : Colors.white60,
+        color: isSelected ? Colors.black : (isDark ? Colors.white60 : Colors.black54),
         fontSize: 11,
         fontWeight: FontWeight.bold,
       ),
-      side: BorderSide(color: isSelected ? Colors.amber : Colors.white10),
+      side: BorderSide(color: isSelected ? Colors.amber : (isDark ? Colors.white10 : Colors.black12)),
     );
   }
 
-  Widget _buildWelcomeHeader(AppUser user) {
+  Widget _buildWelcomeHeader(AppUser user, bool isDark) {
     return Row(
       children: [
         CircleAvatar(
@@ -274,52 +283,52 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("AGENT CERTIFIÉ", style: TextStyle(color: Color(0xFF00963F), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
-            Text(user.displayName ?? "Session Admin", style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+            Text(user.displayName ?? "Session Admin", style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : Colors.black87)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(bool isDark) {
     return Row(
       children: [
-        _buildMiniAdminCard("Mutations", "42", Colors.green),
+        _buildMiniAdminCard("Mutations", "42", Colors.green, isDark),
         const SizedBox(width: 12),
-        _buildMiniAdminCard("Audits", "128", Colors.blue),
+        _buildMiniAdminCard("Audits", "128", Colors.blue, isDark),
         const SizedBox(width: 12),
-        _buildMiniAdminCard("Alertes", "2", Colors.orange),
+        _buildMiniAdminCard("Alertes", "2", Colors.orange, isDark),
       ],
     );
   }
 
-  Widget _buildMiniAdminCard(String label, String value, Color color) {
+  Widget _buildMiniAdminCard(String label, String value, Color color, bool isDark) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: isDark ? const Color(0xFF161B22) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(value, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
-            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildComplianceTable() {
+  Widget _buildComplianceTable(bool isDark) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: isDark ? const Color(0xFF161B22) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,47 +338,47 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("RAPPORT DE CONFORMITÉ DISTRICT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38, letterSpacing: 1)),
-                Icon(Icons.more_horiz, color: Colors.white38, size: 18),
+                Text("RAPPORT DE CONFORMITÉ DISTRICT", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1)),
+                Icon(Icons.more_horiz, color: isDark ? Colors.white38 : Colors.black38, size: 18),
               ],
             ),
           ),
-          _buildTableHeader(),
-          _buildTableRow("Ouenzé", "1,240", "98.2%", true),
-          _buildTableRow("Talangaï", "2,150", "95.5%", true),
-          _buildTableRow("Poto-Poto", "890", "99.1%", true),
-          _buildTableRow("Moungali", "1,420", "82.4%", false),
+          _buildTableHeader(isDark),
+          _buildTableRow("Ouenzé", "1,240", "98.2%", true, isDark),
+          _buildTableRow("Talangaï", "2,150", "95.5%", true, isDark),
+          _buildTableRow("Poto-Poto", "890", "99.1%", true, isDark),
+          _buildTableRow("Moungali", "1,420", "82.4%", false, isDark),
           const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  Widget _buildTableHeader() {
+  Widget _buildTableHeader(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      color: Colors.white.withOpacity(0.02),
-      child: const Row(
+      color: (isDark ? Colors.white : Colors.black).withOpacity(0.02),
+      child: Row(
         children: [
-          Expanded(child: Text("DISTRICT", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
-          Expanded(child: Text("TITRES", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
-          Expanded(child: Text("SCORE", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold))),
-          Text("STATUS", style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold)),
+          Expanded(child: Text("DISTRICT", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold))),
+          Expanded(child: Text("TITRES", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold))),
+          Expanded(child: Text("SCORE", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold))),
+          Text("STATUS", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  Widget _buildTableRow(String district, String count, String score, bool isSafe) {
+  Widget _buildTableRow(String district, String count, String score, bool isSafe, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10, width: 0.5)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.black12, width: 0.5)),
       ),
       child: Row(
         children: [
-          Expanded(child: Text(district, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
-          Expanded(child: Text(count, style: const TextStyle(color: Colors.white60, fontSize: 12))),
+          Expanded(child: Text(district, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87))),
+          Expanded(child: Text(count, style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 12))),
           Expanded(child: Text(score, style: TextStyle(color: isSafe ? Colors.greenAccent : Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold))),
           Icon(
             isSafe ? Icons.check_circle_outline : Icons.error_outline,
@@ -381,11 +390,11 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildActionSection() {
+  Widget _buildActionSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("OPÉRATIONS BLOCKCHAIN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: Colors.white38)),
+        Text("OPÉRATIONS BLOCKCHAIN", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -398,28 +407,32 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                   "1. Initier Draft", 
                   Icons.add_location_alt_outlined, 
                   const Color(0xFF00963F),
-                  onTap: () => _showInitiateDraftDialog(context),
+                  isDark,
+                  onTap: () => _showInitiateDraftDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
                 _buildActionButton(
                   "2. Validation Comm.", 
                   Icons.how_to_reg_outlined, 
-                  const Color(0xFF161B22),
-                  onTap: () => _showValidateCommunityDialog(context),
+                  isDark ? const Color(0xFF161B22) : Colors.white,
+                  isDark,
+                  onTap: () => _showValidateCommunityDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
                 _buildActionButton(
                   "3. Finalisation État", 
                   Icons.verified_user_outlined, 
-                  const Color(0xFF161B22),
-                  onTap: () => _showFinalizeStateDialog(context),
+                  isDark ? const Color(0xFF161B22) : Colors.white,
+                  isDark,
+                  onTap: () => _showFinalizeStateDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
                 _buildActionButton(
                   "Mutation (Transfert)", 
                   Icons.swap_horiz_outlined, 
-                  const Color(0xFF161B22),
-                  onTap: () => _showTransferDialog(context),
+                  isDark ? const Color(0xFF161B22) : Colors.white,
+                  isDark,
+                  onTap: () => _showTransferDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
               ],
@@ -430,10 +443,10 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  void _showInitiateDraftDialog(BuildContext context) {
+  void _showInitiateDraftDialog(BuildContext context, bool isDark) {
     final idController = TextEditingController();
-    final ownerController = TextEditingController();
-    final ownerIdController = TextEditingController();
+    final ownerIdController = TextEditingController(); // This will be the "owner" in the model
+    final cityController = TextEditingController(text: "Brazzaville");
     final neighborhoodController = TextEditingController();
     final cadastralController = TextEditingController();
     final addressController = TextEditingController();
@@ -443,20 +456,21 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text("ÉTAPE 1 : Initiation Draft", style: TextStyle(color: Colors.white)),
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: Text("ÉTAPE 1 : Initiation Draft", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDialogField(idController, "ID Parcelle (ex: BZV-123)"),
-              _buildDialogField(ownerController, "Nom du Propriétaire"),
-              _buildDialogField(ownerIdController, "ID Souverain (SSI)"),
-              _buildDialogField(neighborhoodController, "Quartier (Brazzaville)"),
-              _buildDialogField(cadastralController, "ID Cadastral"),
-              _buildDialogField(addressController, "Adresse Physique"),
-              _buildDialogField(areaController, "Superficie (m²)", isNumber: true),
-              _buildDialogField(priceController, "Prix estimé (FCFA)", isNumber: true),
+              _buildDialogField(idController, "ID Parcelle (ex: 23)", isDark),
+              _buildDialogField(ownerIdController, "ID Propriétaire (ex: 1)", isDark),
+              _buildDialogField(cityController, "Ville", isDark),
+              _buildDialogField(neighborhoodController, "Quartier", isDark),
+              _buildDialogField(cadastralController, "ID Cadastral", isDark),
+              _buildDialogControllerAddress(neighborhoodController, cityController, addressController, isDark),
+              _buildDialogField(addressController, "Adresse Physique", isDark),
+              _buildDialogField(areaController, "Superficie (m²)", isDark, isNumber: true),
+              _buildDialogField(priceController, "Prix estimé (FCFA)", isDark, isNumber: true),
             ],
           ),
         ),
@@ -468,22 +482,25 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               try {
                 final service = Provider.of<LandService>(context, listen: false);
                 await service.initiateDraft(
-                  parcelId: idController.text.trim().toUpperCase(),
-                  ownerName: ownerController.text.trim(),
+                  parcelId: idController.text.trim(),
                   ownerId: ownerIdController.text.trim(),
+                  city: cityController.text.trim(),
                   neighborhood: neighborhoodController.text.trim(),
                   cadastralId: cadastralController.text.trim(),
-                  area: double.parse(areaController.text),
-                  price: double.parse(priceController.text),
-                  usage: "Résidentiel",
+                  area: double.tryParse(areaController.text) ?? 1.0,
+                  price: double.tryParse(priceController.text) ?? 1.0,
                   address: addressController.text.trim(),
-                  signatureV2: "SIG_GEOMETRE_${idController.text.toUpperCase()}_CERT",
-                  documentHash: "HASH_DOC_INIT_${DateTime.now().millisecondsSinceEpoch}",
+                  signatureV2: "1", // According to user model example signatureV2: "1"
+                  documentHash: "4ee9872cd7ef98a7ec8dbeecbd75cc95d11f7a3570a3f960854aab74bfac2c12", // example hash from user
                 );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Draft initié avec succès")));
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Draft initié avec succès")));
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e"), backgroundColor: Colors.red));
+                }
               }
             }, 
             child: const Text("Signer & Envoyer")
@@ -493,18 +510,29 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  void _showValidateCommunityDialog(BuildContext context) {
+  Widget _buildDialogControllerAddress(TextEditingController neighborhood, TextEditingController city, TextEditingController address, bool isDark) {
+    return TextButton(
+      onPressed: () {
+        if (neighborhood.text.isNotEmpty && city.text.isNotEmpty) {
+          address.text = "${neighborhood.text}, ${city.text}";
+        }
+      },
+      child: Text("Générer Adresse auto", style: TextStyle(fontSize: 10, color: isDark ? Colors.amber : Colors.blue)),
+    );
+  }
+
+  void _showValidateCommunityDialog(BuildContext context, bool isDark) {
     final idController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text("ÉTAPE 2 : Validation Communautaire", style: TextStyle(color: Colors.white)),
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: Text("ÉTAPE 2 : Validation Communautaire", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogField(idController, "ID Parcelle à valider"),
-            const Text("Le représentant confirme l'occupation réelle du terrain.", style: TextStyle(color: Colors.white38, fontSize: 12)),
+            _buildDialogField(idController, "ID Parcelle à valider", isDark),
+            Text("Le représentant confirme l'occupation réelle du terrain.", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
           ],
         ),
         actions: [
@@ -531,18 +559,18 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  void _showFinalizeStateDialog(BuildContext context) {
+  void _showFinalizeStateDialog(BuildContext context, bool isDark) {
     final idController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text("ÉTAPE 3 : Finalisation État", style: TextStyle(color: Colors.white)),
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: Text("ÉTAPE 3 : Finalisation État", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogField(idController, "ID Parcelle à finaliser"),
-            const Text("L'Agent Foncier de l'État appose sa signature finale.", style: TextStyle(color: Colors.white38, fontSize: 12)),
+            _buildDialogField(idController, "ID Parcelle à finaliser", isDark),
+            Text("L'Agent Foncier de l'État appose sa signature finale.", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
           ],
         ),
         actions: [
@@ -569,7 +597,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  void _showTransferDialog(BuildContext context) {
+  void _showTransferDialog(BuildContext context, bool isDark) {
     final idController = TextEditingController();
     final newOwnerNameController = TextEditingController();
     final newOwnerIdController = TextEditingController();
@@ -577,14 +605,14 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text("Mutation (Transfert)", style: TextStyle(color: Colors.white)),
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: Text("Mutation (Transfert)", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogField(idController, "ID Parcelle"),
-            _buildDialogField(newOwnerNameController, "Nouveau Propriétaire"),
-            _buildDialogField(newOwnerIdController, "Nouveau ID Souverain"),
+            _buildDialogField(idController, "ID Parcelle", isDark),
+            _buildDialogField(newOwnerNameController, "Nouveau Propriétaire", isDark),
+            _buildDialogField(newOwnerIdController, "Nouveau ID Souverain", isDark),
           ],
         ),
         actions: [
@@ -612,24 +640,30 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildDialogField(TextEditingController controller, String label, {bool isNumber = false}) {
+  Widget _buildDialogField(TextEditingController controller, String label, bool isDark, {bool isNumber = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white38),
-          enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+          labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12)),
           focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00963F))),
+          fillColor: isDark ? null : Colors.grey[50],
         ),
       ),
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color bgColor, {required VoidCallback onTap, double? width}) {
+  Widget _buildActionButton(String label, IconData icon, Color bgColor, bool isDark, {required VoidCallback onTap, double? width}) {
+    final isPrimary = bgColor == const Color(0xFF00963F);
+    final effectiveBgColor = isPrimary ? bgColor : (isDark ? bgColor : Colors.white);
+    final textColor = isPrimary ? Colors.white : (isDark ? Colors.white : Colors.black87);
+    final iconColor = isPrimary ? Colors.white : (isDark ? Colors.white : Colors.black54);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -637,29 +671,34 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
         width: width,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: BoxDecoration(
-          color: bgColor, 
+          color: effectiveBgColor, 
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [
+            if (!isDark && !isPrimary) BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 24),
+            Icon(icon, color: iconColor, size: 24),
             const SizedBox(height: 12),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            Text(label, textAlign: TextAlign.center, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 11)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRecentOpsSection() {
+  Widget _buildRecentOpsSection(bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -667,39 +706,39 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("DERNIÈRES OPÉRATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1, color: Colors.white)),
+              Text("DERNIÈRES OPÉRATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1, color: isDark ? Colors.white : Colors.black87)),
               TextButton(onPressed: () {}, child: const Text("Voir tout", style: TextStyle(color: Color(0xFF00963F)))),
             ],
           ),
           const SizedBox(height: 16),
-          _buildOpRow("Mutation Parcelle BZV-457", "Validé", "Il y a 10 min"),
-          const Divider(height: 32, color: Colors.white10),
-          _buildOpRow("Enregistrement Nouveau Titre", "Validé", "Il y a 2h"),
-          const Divider(height: 32, color: Colors.white10),
-          _buildOpRow("Modification Propriétaire", "En attente", "Hier"),
+          _buildOpRow("Mutation Parcelle BZV-457", "Validé", "Il y a 10 min", isDark),
+          Divider(height: 32, color: isDark ? Colors.white10 : Colors.black12),
+          _buildOpRow("Enregistrement Nouveau Titre", "Validé", "Il y a 2h", isDark),
+          Divider(height: 32, color: isDark ? Colors.white10 : Colors.black12),
+          _buildOpRow("Modification Propriétaire", "En attente", "Hier", isDark),
         ],
       ),
     );
   }
 
-  Widget _buildOpRow(String title, String status, String time) {
+  Widget _buildOpRow(String title, String status, String time, bool isDark) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: (isDark ? Colors.white : Colors.black).withOpacity(0.05),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.history, size: 18, color: Colors.white38),
+          child: Icon(Icons.history, size: 18, color: isDark ? Colors.white38 : Colors.black38),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
-              Text(time, style: const TextStyle(color: Colors.white24, fontSize: 11)),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
+              Text(time, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 11)),
             ],
           ),
         ),

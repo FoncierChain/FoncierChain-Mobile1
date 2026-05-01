@@ -180,8 +180,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final navService = Provider.of<LandService>(context);
+    final isDark = navService.isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: isDark ? const Color(0xFF0B0E14) : Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -189,11 +192,11 @@ class _SplashScreenState extends State<SplashScreen> {
             const Icon(Icons.hub_outlined, color: Color(0xFF00963F), size: 100),
             const SizedBox(height: 32),
             Text(
-              "FONCIERCHAINE",
+              "FONCIERCHAIN",
               style: GoogleFonts.inter(
                 fontSize: 36, 
                 fontWeight: FontWeight.w900, 
-                color: Colors.white, 
+                color: isDark ? Colors.white : Colors.black87, 
                 letterSpacing: 8,
               ),
             ),
@@ -201,7 +204,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -209,17 +212,17 @@ class _SplashScreenState extends State<SplashScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 10, 
                   fontWeight: FontWeight.w500, 
-                  color: Colors.white38, 
+                  color: isDark ? Colors.white38 : Colors.black38, 
                   letterSpacing: 1.5,
                 ),
               ),
             ),
             const SizedBox(height: 48),
-            const SizedBox(
+            SizedBox(
               width: 150,
               child: LinearProgressIndicator(
-                backgroundColor: Colors.white10,
-                color: Color(0xFF00963F),
+                backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                color: const Color(0xFF00963F),
               ),
             ),
           ],
@@ -252,6 +255,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final navService = Provider.of<LandService>(context);
+    final isDark = navService.isDarkMode;
     
     return Scaffold(
       body: Stack(
@@ -272,13 +276,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (navService.isDarkMode ? Colors.white : Colors.black).withOpacity(0.1),
+                    color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
                   ),
                   child: Icon(
-                    navService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                    color: navService.isDarkMode ? Colors.amber : Colors.indigo,
+                    isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: isDark ? Colors.amber : Colors.indigo,
                     size: 20,
                   ),
                 ),
@@ -287,23 +291,27 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(navService.currentTabIndex),
+      bottomNavigationBar: _buildBottomNav(navService.currentTabIndex, isDark),
     );
   }
 
-  Widget _buildBottomNav(int currentIndex) {
+  Widget _buildBottomNav(int currentIndex, bool isDark) {
+    final backgroundColor = isDark ? const Color(0xFF0B0E14) : Colors.white;
+    final borderColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black12;
+    final unselectedColor = isDark ? Colors.white38 : Colors.black38;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0B0E14),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+        color: backgroundColor,
+        border: Border(top: BorderSide(color: borderColor)),
       ),
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: _onTabTapped,
         selectedItemColor: const Color(0xFF00963F),
-        unselectedItemColor: Colors.white38,
+        unselectedItemColor: unselectedColor,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF0B0E14),
+        backgroundColor: backgroundColor,
         elevation: 0,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),

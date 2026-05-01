@@ -86,11 +86,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final navService = Provider.of<LandService>(context);
+    final isDark = navService.isDarkMode;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          _buildSecondaryHeader(),
+          _buildSecondaryHeader(isDark),
           Expanded(
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -98,26 +101,26 @@ class _VerifyScreenState extends State<VerifyScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSearchSection(),
+                  _buildSearchSection(isDark),
                   const SizedBox(height: 32),
                   if (_isSearching)
                     const Center(child: CircularProgressIndicator(color: Color(0xFF00963F)))
                   else if (_error != null)
                     _buildErrorState()
                   else if (_selectedParcel != null)
-                    _buildParcelDetail(_selectedParcel!)
+                    _buildParcelDetail(_selectedParcel!, isDark)
                   else if (_foundParcels.isNotEmpty)
-                    _buildParcelList()
+                    _buildParcelList(isDark)
                   else
-                    _buildIdleState(),
+                    _buildIdleState(isDark),
                   const SizedBox(height: 48),
-                  _buildTrustBadges(),
+                  _buildTrustBadges(isDark),
                   const SizedBox(height: 60),
                   Center(
                     child: Text(
                       "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
                       style: GoogleFonts.inter(
-                        color: Colors.white12,
+                        color: isDark ? Colors.white12 : Colors.black12,
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 2,
@@ -135,14 +138,16 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
 
-  Widget _buildSecondaryHeader() {
+  Widget _buildSecondaryHeader(bool isDark) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    
+    final backgroundColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final borderColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       padding: EdgeInsets.fromLTRB(screenWidth < 600 ? 16 : 32, 60, screenWidth < 600 ? 16 : 32, 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161B22),
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border(bottom: BorderSide(color: borderColor)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,35 +164,45 @@ class _VerifyScreenState extends State<VerifyScreen> {
           const SizedBox(height: 8),
           Text(
             "Vérification Cryptographique",
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchSection() {
+  Widget _buildSearchSection(bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+        boxShadow: [
+          if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "ENTREZ L'IDENTIFIANT OU L'ADRESSE",
-            style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+            style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: "ex: BZV-45785 ou Rue Poto-Poto",
-              prefixIcon: Icon(Icons.search, color: Color(0xFF00963F)),
+              prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
+              fillColor: isDark ? const Color(0xFF0B0E14) : Colors.grey[50],
             ),
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             onSubmitted: (_) => _handleSearch(),
           ),
           const SizedBox(height: 16),
@@ -207,34 +222,34 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildParcelList() {
+  Widget _buildParcelList(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "${_foundParcels.length} RÉSULTATS TROUVÉS",
-          style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+          style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         const SizedBox(height: 16),
         ..._foundParcels.map((p) => Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
           ),
           child: ListTile(
             onTap: () => setState(() => _selectedParcel = p),
-            title: Text(p.address, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            subtitle: Text(p.id, style: const TextStyle(color: Colors.white38, fontSize: 12)),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+            title: Text(p.address, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+            subtitle: Text(p.id, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
+            trailing: Icon(Icons.chevron_right, color: isDark ? Colors.white24 : Colors.black24),
           ),
         )).toList(),
       ],
     );
   }
 
-  Widget _buildParcelDetail(Parcel parcel) {
+  Widget _buildParcelDetail(Parcel parcel, bool isDark) {
     return Column(
       children: [
         if (_foundParcels.length > 1)
@@ -250,9 +265,12 @@ class _VerifyScreenState extends State<VerifyScreen> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.green.withOpacity(0.2)),
+            border: Border.all(color: Colors.green.withOpacity(isDark ? 0.2 : 0.4)),
+            boxShadow: [
+              if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,44 +278,45 @@ class _VerifyScreenState extends State<VerifyScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildDetailLabel("TITRE FONCIER", parcel.id, isBig: true),
+                  _buildDetailLabel("TITRE FONCIER", parcel.id, isDark, isBig: true),
                   _buildStatusBadge(parcel.status),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: Colors.white10),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: isDark ? Colors.white10 : Colors.black12),
               ),
               _buildDetailRow([
-                _buildDetailLabel("PROPRIÉTAIRE", parcel.ownerName),
-                _buildDetailLabel("QUARTIER", parcel.neighborhood),
+                _buildDetailLabel("PROPRIÉTAIRE", parcel.ownerName, isDark),
+                _buildDetailLabel("QUARTIER", parcel.neighborhood, isDark),
               ]),
               const SizedBox(height: 24),
               _buildDetailRow([
-                _buildDetailLabel("CADASTRE", parcel.cadastralId),
-                _buildDetailLabel("SUPERFICIE", "${parcel.area} m²"),
+                _buildDetailLabel("CADASTRE", parcel.cadastralId, isDark),
+                _buildDetailLabel("SUPERFICIE", "${parcel.area} m²", isDark),
               ]),
               const SizedBox(height: 24),
-              _buildDetailLabel("ADRESSE", parcel.address),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: Colors.white10),
+              _buildDetailLabel("ADRESSE", parcel.address, isDark),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: isDark ? Colors.white10 : Colors.black12),
               ),
-              const Text("VALIDATION BLOCKCHAIN", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+              Text("VALIDATION BLOCKCHAIN", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildValidationStep("Signature V2 (Géomètre)", parcel.signatureV2 != null, parcel.signatureV2),
-              _buildValidationStep("Signature V3 (Communauté)", parcel.signatureV3 != null, parcel.signatureV3),
-              _buildValidationStep("Signature V1 (État)", parcel.signatureV1 != null, parcel.signatureV1),
+              _buildValidationStep("Signature V2 (Géomètre)", parcel.signatureV2 != null, parcel.signatureV2, isDark),
+              _buildValidationStep("Signature V3 (Communauté)", parcel.signatureV3 != null, parcel.signatureV3, isDark),
+              _buildValidationStep("Signature V1 (État)", parcel.signatureV1 != null, parcel.signatureV1, isDark),
               if (parcel.txId != null) ...[
                 const SizedBox(height: 24),
-                const Text("HASH DE TRANSACTION", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                Text("HASH DE TRANSACTION", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
+                    color: (isDark ? Colors.black : Colors.grey[100])?.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(8),
+                    border: isDark ? null : Border.all(color: Colors.black12),
                   ),
                   child: Text(
                     parcel.txId!,
@@ -305,11 +324,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
                   ),
                 ),
               ],
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: Colors.white10),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: isDark ? Colors.white10 : Colors.black12),
               ),
-              Text("HISTORIQUE DES MUTATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38)),
+              Text("HISTORIQUE DES MUTATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
               const SizedBox(height: 16),
               FutureBuilder<List<TransactionHistory>>(
                 future: Provider.of<LandService>(context, listen: false).getHistory(parcel.id),
@@ -319,10 +338,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
                   }
                   final history = snapshot.data ?? [];
                   if (history.isEmpty) {
-                    return const Text("Aucun historique disponible.", style: TextStyle(color: Colors.white24, fontSize: 12));
+                    return Text("Aucun historique disponible.", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 12));
                   }
                   return Column(
-                    children: history.map((h) => _buildHistoryRow(h)).toList(),
+                    children: history.map((h) => _buildHistoryRow(h, isDark)).toList(),
                   );
                 },
               ),
@@ -358,21 +377,21 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildValidationStep(String label, bool isSigned, String? signature) {
+  Widget _buildValidationStep(String label, bool isSigned, String? signature, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Icon(isSigned ? Icons.check_circle : Icons.radio_button_unchecked, 
-               color: isSigned ? Colors.green : Colors.white10, size: 16),
+               color: isSigned ? Colors.green : (isDark ? Colors.white10 : Colors.black12), size: 16),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: isSigned ? Colors.white : Colors.white24, fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(label, style: TextStyle(color: isSigned ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white24 : Colors.black26), fontSize: 12, fontWeight: FontWeight.bold)),
                 if (isSigned && signature != null)
-                  Text(signature, style: GoogleFonts.jetBrainsMono(color: Colors.white24, fontSize: 9), overflow: TextOverflow.ellipsis),
+                  Text(signature, style: GoogleFonts.jetBrainsMono(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9), overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -381,7 +400,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildHistoryRow(TransactionHistory h) {
+  Widget _buildHistoryRow(TransactionHistory h, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -397,10 +416,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(h.type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                Text(h.type, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white : Colors.black87)),
                 const SizedBox(height: 2),
-                Text("${h.previousOwner} → ${h.newOwner}", style: const TextStyle(color: Colors.white38, fontSize: 11)),
-                Text(h.date.toString().substring(0, 16), style: const TextStyle(color: Colors.white10, fontSize: 9)),
+                Text("${h.previousOwner} → ${h.newOwner}", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
+                Text(h.date.toString().substring(0, 16), style: TextStyle(color: isDark ? Colors.white10 : Colors.black12, fontSize: 9)),
               ],
             ),
           ),
@@ -415,54 +434,54 @@ class _VerifyScreenState extends State<VerifyScreen> {
     );
   }
 
-  Widget _buildDetailLabel(String label, String value, {bool isBig = false}) {
+  Widget _buildDetailLabel(String label, String value, bool isDark, {bool isBig = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: isBig ? 20 : 14, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(value, style: TextStyle(fontSize: isBig ? 20 : 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
       ],
     );
   }
 
-  Widget _buildTrustBadges() {
+  Widget _buildTrustBadges(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        _buildTrustBadge(Icons.lock_outline, "100% Sécurisé"),
-        _buildTrustBadge(Icons.public, "Accès Public"),
-        _buildTrustBadge(Icons.auto_awesome, "Zéro Fraude"),
+        _buildTrustBadge(Icons.lock_outline, "100% Sécurisé", isDark),
+        _buildTrustBadge(Icons.public, "Accès Public", isDark),
+        _buildTrustBadge(Icons.auto_awesome, "Zéro Fraude", isDark),
       ],
     );
   }
 
-  Widget _buildTrustBadge(IconData icon, String label) {
+  Widget _buildTrustBadge(IconData icon, String label, bool isDark) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white24, size: 24),
+        Icon(icon, color: isDark ? Colors.white24 : Colors.black26, size: 24),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  Widget _buildIdleState() {
+  Widget _buildIdleState(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
         children: [
-          Icon(Icons.shield_outlined, size: 80, color: Colors.white.withOpacity(0.03)),
+          Icon(Icons.shield_outlined, size: 80, color: (isDark ? Colors.white : Colors.black).withOpacity(0.03)),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             "Prêt pour l'audit instantané",
-            style: TextStyle(color: Colors.white38, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "Entrez un ID pour commencer la vérification",
-            style: TextStyle(color: Colors.white24, fontSize: 12),
+            style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 12),
           ),
         ],
       ),

@@ -300,10 +300,16 @@ class _MapScreenState extends State<MapScreen> {
                     "DÉTAILS PARCELLE",
                     style: GoogleFonts.inter(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
-                  IconButton(
-                    onPressed: () => setState(() => _selectedParcel = null),
-                    icon: Icon(Icons.close, size: 18, color: isDark ? Colors.white38 : Colors.black38),
-                    style: IconButton.styleFrom(backgroundColor: (isDark ? Colors.white : Colors.black).withOpacity(0.05)),
+                  Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    child: IconButton(
+                      onPressed: () => setState(() => _selectedParcel = null),
+                      icon: const Icon(Icons.close, size: 20, color: Colors.redAccent),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.redAccent.withOpacity(0.1),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ),
                   ),
                 ],
               ),
