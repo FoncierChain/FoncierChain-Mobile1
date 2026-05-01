@@ -104,6 +104,35 @@ class APIDocScreen extends StatelessWidget {
               "{ \"status\": \"SUCCESS\" }",
               isDark
             ),
+            const SizedBox(height: 32),
+            _buildSectionTitle("5. GESTION DES ERREURS & CODES STATUTS"),
+            _buildEndpointDoc(
+              "Erreur de Validation (400)",
+              "Champs obligatoires manquants (id, cadastralId, land_id, etc.)",
+              "{\n  \"status\": \"FAILED\",\n  \"message\": \"ID de parcelle ou ID cadastral manquant\"\n}",
+              "Code: 400 Bad Request",
+              isDark
+            ),
+            _buildEndpointDoc(
+              "Double Attribution (409)",
+              "Tentative d'enregistrement d'une parcelle avec des données déjà présentes sur la blockchain.",
+              "{\n  \"status\": \"FAILED\",\n  \"message\": \"DOUBLE ATTRIBUTION REJETÉE : [Champ] [Valeur] est déjà utilisé dans le registre immuable.\",\n  \"conflict\": \"parcel_id | cadastral_id | document_hash\"\n}",
+              "Code: 409 Conflict",
+              isDark
+            ),
+            _buildEndpointDoc(
+              "Erreur de Permission (403)",
+              "Tentative d'accès à une route protégée sans token valide.",
+              "{\n  \"error\": \"Access denied. Token missing or invalid.\"\n}",
+              "Code: 403 Forbidden",
+              isDark
+            ),
+            const SizedBox(height: 32),
+            _buildSectionTitle("6. RÉSUMÉ DES CONTRAINTES CRITIQUES"),
+            _buildCodeBlock(
+              "1. UNICITÉ PARCELLE : Un ID de parcelle ne peut être enregistré qu'une seule fois.\n2. UNICITÉ CADASTRALE : Une référence cadastrale est unique sur tout le territoire.\n3. UNICITÉ DOCUMENTAIRE : Un hash de document (SHA-256) ne peut pas être lié à deux parcelles différentes.\n4. IMMUTABILITÉ : Une fois finalisée (ÉTAPE 3), la parcelle ne peut être modifiée que par une 'Mutation' (Transfert).",
+              isDark
+            ),
             const SizedBox(height: 48),
             _buildFooter(isDark),
             const SizedBox(height: 60),

@@ -232,7 +232,7 @@ class LandService with ChangeNotifier {
     required String documentHash,
   }) async {
     try {
-      await ApiService.createDraft({
+      final response = await ApiService.createDraft({
         'id': parcelId,
         'owner': ownerId,
         'city': city,
@@ -244,6 +244,11 @@ class LandService with ChangeNotifier {
         'signatureV2': signatureV2,
         'price': price,
       });
+
+      if (response['status'] == 'FAILED') {
+        throw Exception(response['message'] ?? "Erreur d'initiation");
+      }
+
       notifyListeners();
     } catch (e) {
       debugPrint("Erreur Draft: $e");
@@ -253,7 +258,10 @@ class LandService with ChangeNotifier {
 
   Future<void> validateCommunity(String parcelId, String signatureV3) async {
     try {
-      await ApiService.validateLand(parcelId, signatureV3);
+      final response = await ApiService.validateLand(parcelId, signatureV3);
+      if (response['status'] == 'FAILED') {
+        throw Exception(response['message'] ?? "Erreur de validation");
+      }
       notifyListeners();
     } catch (e) {
       debugPrint("Erreur Validation: $e");
@@ -263,7 +271,10 @@ class LandService with ChangeNotifier {
 
   Future<void> finalizeLand(String parcelId, String signatureV1) async {
     try {
-      await ApiService.finalizeLand(parcelId, signatureV1);
+      final response = await ApiService.finalizeLand(parcelId, signatureV1);
+      if (response['status'] == 'FAILED') {
+        throw Exception(response['message'] ?? "Erreur de finalisation");
+      }
       notifyListeners();
     } catch (e) {
       debugPrint("Erreur Finalisation: $e");

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -453,6 +455,11 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     final areaController = TextEditingController();
     final priceController = TextEditingController();
 
+    String generateHash() {
+      final input = "${idController.text}${cadastralController.text}${ownerIdController.text}${DateTime.now().millisecondsSinceEpoch}";
+      return sha256.convert(utf8.encode(input)).toString();
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -491,7 +498,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                   price: double.tryParse(priceController.text) ?? 1.0,
                   address: addressController.text.trim(),
                   signatureV2: "1", // According to user model example signatureV2: "1"
-                  documentHash: "4ee9872cd7ef98a7ec8dbeecbd75cc95d11f7a3570a3f960854aab74bfac2c12", // example hash from user
+                  documentHash: generateHash(), 
                 );
                 if (context.mounted) {
                   Navigator.pop(context);
