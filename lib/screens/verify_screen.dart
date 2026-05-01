@@ -311,8 +311,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
               ),
               Text("HISTORIQUE DES MUTATIONS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38)),
               const SizedBox(height: 16),
-              StreamBuilder<List<TransactionHistory>>(
-                stream: Provider.of<LandService>(context).getHistory(parcel.id),
+              FutureBuilder<List<TransactionHistory>>(
+                future: Provider.of<LandService>(context, listen: false).getHistory(parcel.id),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: LinearProgressIndicator(color: Color(0xFF00963F)));
@@ -334,13 +334,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = Colors.orange;
+    Color color = Colors.red;
     String label = status;
     if (status == 'FINALIZED') {
       color = Colors.green;
       label = "FINALISÉ";
     } else if (status == 'COMMUNITY_VALIDATED') {
-      color = Colors.cyan;
+      color = Colors.blue;
       label = "VALIDÉ (COMM)";
     } else if (status == 'DRAFT') {
       color = Colors.orange;

@@ -218,7 +218,7 @@ class APIDocScreen extends StatelessWidget {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              "Toutes les opérations d'écriture Land et Auction s'interfacent directement avec Hyperledger Fabric via Firebase Cloud Functions.",
+              "Toutes les opérations d'écriture Land et Auction s'interfacent directement avec le backend FoncierChain via des appels REST sécurisés.",
               style: TextStyle(color: Colors.white38, fontSize: 11),
             ),
           ),

@@ -80,19 +80,19 @@ class _MapScreenState extends State<MapScreen> {
                 onTap: () {
                   setState(() {
                     _selectedParcel = Parcel(
-                      id: data['parcelId'] ?? 'ID-MIS',
+                      id: data['parcelId']?.toString() ?? data['id']?.toString() ?? 'ID-MIS',
                       ownerName: data['owner'] ?? 'Inconnu',
                       ownerId: 'UID-MAP',
                       city: data['city'] ?? 'Brazzaville',
                       neighborhood: data['neighborhood'] ?? '',
                       address: "${data['neighborhood']}, ${data['city']}",
-                      cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId']}",
-                      area: (data['surface'] as num?)?.toDouble() ?? 0.0,
+                      cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId'] ?? data['id']}",
+                      area: (data['area'] ?? data['surface'] as num?)?.toDouble() ?? 0.0,
                       price: (data['price'] as num?)?.toDouble() ?? 0.0,
                       usage: data['usage'] ?? 'NA',
                       status: data['status'] ?? 'DRAFT',
                       txId: data['hash'],
-                      lastUpdate: data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now(),
+                      lastUpdate: data['createdAt'] != null ? DateTime.parse(data['createdAt']) : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
                     );
                   });
                 },
@@ -125,7 +125,7 @@ class _MapScreenState extends State<MapScreen> {
       case 'COMMUNITY_VALIDATED':
         return Colors.blue;
       default:
-        return Colors.orange;
+        return Colors.red;
     }
   }
 

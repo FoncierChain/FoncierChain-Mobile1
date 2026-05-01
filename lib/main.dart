@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/verify_screen.dart';
 import 'screens/map_screen.dart';
@@ -16,12 +14,6 @@ import 'widgets/neural_background.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialisation de Firebase avec les options générées
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
   runApp(const FoncierChainApp());
 }
 
@@ -157,9 +149,81 @@ class FoncierChainApp extends StatelessWidget {
                 ),
               ),
             ),
-            home: const MainNavigationShell(),
+            home: const SplashScreen(),
           );
         },
+      ),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavigationShell()),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0E14),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.hub_outlined, color: Color(0xFF00963F), size: 100),
+            const SizedBox(height: 32),
+            Text(
+              "FONCIERCHAINE",
+              style: GoogleFonts.inter(
+                fontSize: 36, 
+                fontWeight: FontWeight.w900, 
+                color: Colors.white, 
+                letterSpacing: 8,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white10),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION | MIABE HACKATHON 2026",
+                style: GoogleFonts.inter(
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w500, 
+                  color: Colors.white38, 
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
+            const SizedBox(
+              width: 150,
+              child: LinearProgressIndicator(
+                backgroundColor: Colors.white10,
+                color: Color(0xFF00963F),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -196,6 +260,30 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           IndexedStack(
             index: navService.currentTabIndex,
             children: _screens,
+          ),
+          Positioned(
+            top: 50,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => navService.toggleTheme(),
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (navService.isDarkMode ? Colors.white : Colors.black).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Icon(
+                    navService.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    color: navService.isDarkMode ? Colors.amber : Colors.indigo,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

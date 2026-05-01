@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
@@ -30,8 +29,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       final res = await ApiService.login(_usernameController.text, _passwordController.text);
       if (res.containsKey('token')) {
         final service = Provider.of<LandService>(context, listen: false);
-        // Note: For demo purposes, we still use LandService state but login via API
-        await service.loginWithGoogle(); 
+        await service.login(_usernameController.text, _passwordController.text);
       }
     } catch (e) {
       if (mounted) {
@@ -149,7 +147,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   }
 
 
-  Widget _buildAgentDashboard(User user) {
+  Widget _buildAgentDashboard(AppUser user) {
     final service = Provider.of<LandService>(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -262,7 +260,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildWelcomeHeader(User user) {
+  Widget _buildWelcomeHeader(AppUser user) {
     return Row(
       children: [
         CircleAvatar(
