@@ -7,12 +7,13 @@ plugins {
 
 android {
     namespace = "com.africhain.fancierchain"
-    compileSdk = 34
+    compileSdk = 35
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
         applicationId = "com.africhain.fancierchain"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 
