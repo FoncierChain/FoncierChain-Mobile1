@@ -208,15 +208,10 @@ class LandService with ChangeNotifier {
 
   Future<List<TransactionHistory>> getHistory(String parcelId) async {
     try {
-      final history = await ApiService.getLandHistory(parcelId);
-      if (history is List) {
-        return history.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
-      } else if (history is Map) {
-         // Handle if the API returns a map with a list inside
-         final dynamic data = history['history'] ?? history['data'] ?? [];
-         if (data is List) {
-           return data.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
-         }
+      final res = await ApiService.getLandHistory(parcelId);
+      final dynamic historyData = res['history'] ?? res['data'] ?? [];
+      if (historyData is List) {
+        return historyData.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
       }
     } catch (e) {
       debugPrint("Erreur History: $e");
