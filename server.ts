@@ -10,9 +10,9 @@ app.use(express.json());
 
 // --- Mock Database ---
 let parcels = [
-  { id: "bz-101", owner: "Jean Mokoko", city: "Brazzaville", neighborhood: "Poto-Poto", area: 450, status: "FINALIZED", usage: "Residentiel", lat: -4.26, lng: 15.28 },
-  { id: "bz-102", owner: "Marie Samba", city: "Brazzaville", neighborhood: "Moungali", area: 600, status: "VALIDATED", usage: "Commercial", lat: -4.27, lng: 15.29 },
-  { id: "bz-103", owner: "Pierre Okombi", city: "Brazzaville", neighborhood: "Bacongo", area: 300, status: "DRAFT", usage: "Residentiel", lat: -4.28, lng: 15.27 },
+  { parcelId: "bz-101", cadastralId: "CAD-101", owner: "Jean Mokoko", city: "Brazzaville", neighborhood: "Poto-Poto", surface: 450, price: 5000000, status: "FINALIZED", usage: "Residentiel", lat: -4.26, lng: 15.28, hash: "0x7a2...f41" },
+  { parcelId: "bz-102", cadastralId: "CAD-102", owner: "Marie Samba", city: "Brazzaville", neighborhood: "Moungali", surface: 600, price: 12000000, status: "COMMUNITY_VALIDATED", usage: "Commercial", lat: -4.27, lng: 15.29, hash: "0x9b1...e22" },
+  { parcelId: "bz-103", cadastralId: "CAD-103", owner: "Pierre Okombi", city: "Brazzaville", neighborhood: "Bacongo", surface: 300, price: 3500000, status: "DRAFT", usage: "Residentiel", lat: -4.28, lng: 15.27, hash: "0x1c3...a88" },
 ];
 
 const ledger = [
@@ -36,29 +36,42 @@ app.post('/api/v1/register/', (req: Request, res: Response) => {
 });
 
 app.post('/api/v1/auth/', (req: Request, res: Response) => {
-  res.json({ token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b" });
+  res.json({ 
+    token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
+    user: { id: 1, username: req.body.username, role: "AGENT" }
+  });
 });
 
 // --- Land Workflow ---
 app.post('/api/v1/land/draft/', (req: Request, res: Response) => {
-  const newId = `bz-${Math.floor(Math.random() * 1000)}`;
-  const newParcel = { ...req.body, id: newId, status: "DRAFT" };
+  const { parcelId } = req.body;
+  if (parcels.find(p => p.parcelId === parcelId)) {
+    return res.status(409).json({ status: "FAILED", message: "DOUBLE ATTRIBUTION REJETÉE", conflict: "parcel_id" });
+  }
+  const newParcel = { ...req.body, status: "DRAFT" };
   parcels.push(newParcel);
-  res.status(201).json({ status: "SUCCESS", txId: "0x" + Math.random().toString(16).slice(2), id: newId });
+  res.status(201).json({ status: "SUCCESS", txId: "0x" + Math.random().toString(16).slice(2), id: parcelId });
 });
 
 app.patch('/api/v1/land/validate/', (req: Request, res: Response) => {
   const { land_id } = req.body;
-  const p = parcels.find(x => x.id === land_id);
-  if (p) p.status = "VALIDATED";
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) p.status = "COMMUNITY_VALIDATED";
   res.json({ status: "SUCCESS", message: "Validated successfully" });
 });
 
 app.patch('/api/v1/land/finalize/', (req: Request, res: Response) => {
   const { land_id } = req.body;
-  const p = parcels.find(x => x.id === land_id);
+  const p = parcels.find(x => x.parcelId === land_id);
   if (p) p.status = "FINALIZED";
   res.json({ status: "SUCCESS", message: "Land permanently anchored" });
+});
+
+app.post('/api/v1/land/mutate/', (req: Request, res: Response) => {
+  const { land_id, new_owner_id } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) p.owner = new_owner_id;
+  res.json({ status: "SUCCESS", message: "Ownership transferred" });
 });
 
 // --- Statistics ---
@@ -77,7 +90,7 @@ app.get('/api/v1/stats/', (req: Request, res: Response) => {
   });
 });
 
-// --- Registry ---
+// --- Registry & Search ---
 app.get('/api/v1/registry/public/', (req: Request, res: Response) => {
   res.json({
     parcels: parcels.filter(p => p.status === "FINALIZED"),
@@ -86,9 +99,30 @@ app.get('/api/v1/registry/public/', (req: Request, res: Response) => {
   });
 });
 
-// --- GIS Map ---
+app.get('/api/v1/citizen/verify', (req: Request, res: Response) => {
+  const query = (req.query.land_id as string || '').toLowerCase();
+  const results = parcels.filter(p => p.parcelId.toLowerCase().includes(query));
+  res.json(results);
+});
+
+// --- Map Data ---
 app.get('/api/v1/map/', (req: Request, res: Response) => {
-  res.json(parcels);
+  res.json(parcels.map(p => ({
+    ...p,
+    address: `${p.neighborhood}, ${p.city}`,
+    currentOwner: p.owner,
+    workflowStep: p.status === "FINALIZED" ? 3 : (p.status === "COMMUNITY_VALIDATED" ? 2 : 1)
+  })));
+});
+
+// --- History ---
+app.get('/api/v1/land/:land_id/history/', (req: Request, res: Response) => {
+  res.json({
+    land_id: req.params.land_id,
+    history: [
+      { txId: "0xabc...", action: "CREATED", timestamp: new Date().toISOString(), value: { status: "DRAFT" } }
+    ]
+  });
 });
 
 // Fallback to index.html for SPA routing
@@ -97,7 +131,7 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 // --- Start Server ---
-app.listen(port, '0.0.0.0', () => {
-  console.log(`FancierChain Unified Server running at http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`FoncierChain Unified Server running at http://0.0.0.0:${port}`);
 });
 

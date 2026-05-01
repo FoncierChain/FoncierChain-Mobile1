@@ -47,23 +47,25 @@ class Parcel {
 
   factory Parcel.fromFirestore(Map<String, dynamic> data) {
     return Parcel(
-      id: data['id'] ?? '',
-      ownerName: data['ownerName'] ?? '',
-      ownerId: data['ownerId'] ?? '',
+      id: data['id'] ?? data['parcelId'] ?? '',
+      ownerName: data['ownerName'] ?? data['owner'] ?? '',
+      ownerId: data['ownerId'] ?? 'UID-TEMP',
       city: data['city'] ?? 'Brazzaville',
       neighborhood: data['neighborhood'] ?? '',
       cadastralId: data['cadastralId'] ?? '',
-      area: (data['area'] ?? 0).toDouble(),
+      area: (data['area'] ?? data['surface'] ?? 0).toDouble(),
       price: (data['price'] ?? 0).toDouble(),
       usage: data['usage'] ?? '',
       address: data['address'] ?? '',
       status: data['status'] ?? 'DRAFT',
-      signatureV1: data['signatureV1'],
-      signatureV2: data['signatureV2'],
-      signatureV3: data['signatureV3'],
-      documentHash: data['documentHash'],
+      signatureV1: data['signatureV1'] ?? data['signature_v1'],
+      signatureV2: data['signatureV2'] ?? data['signature_v2'],
+      signatureV3: data['signatureV3'] ?? data['signature_v3'],
+      documentHash: data['documentHash'] ?? data['hash'],
       txId: data['txId'],
-      lastUpdate: (data['lastUpdate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastUpdate: data['lastUpdate'] is Timestamp 
+          ? (data['lastUpdate'] as Timestamp).toDate() 
+          : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
     );
   }
 }
@@ -104,28 +106,30 @@ enum OperationType {
 }
 
 class LandService with ChangeNotifier {
-  // Instance Firestore avec le databaseId spécifique si nécessaire
   late final FirebaseFirestore _db;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  late final ApiService _api;
-
-  ApiService get api => _api;
 
   int _currentTabIndex = 0;
   int get currentTabIndex => _currentTabIndex;
   String? _pendingSearchQuery;
   String? get pendingSearchQuery => _pendingSearchQuery;
 
-  // Rôle de simulation (uniquement pour le développement/démo)
   String? _simulatedRole;
   String? get simulatedRole => _simulatedRole;
+
+  bool _isDarkMode = true;
+  bool get isDarkMode => _isDarkMode;
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
 
   void setSimulatedRole(String? role) {
     _simulatedRole = role;
     notifyListeners();
   }
 
-  // Rôle réel de l'utilisateur en DB
   String _userRole = 'CITIZEN';
   String get userRole => _simulatedRole ?? _userRole;
 
@@ -147,10 +151,6 @@ class LandService with ChangeNotifier {
       databaseId: 'ai-studio-66c2610a-a070-4530-8833-e441559e6519',
     );
 
-    // Initialisation du service API avec la baseUrl du backend
-    _api = ApiService(baseUrl: 'http://localhost:8000/api/v1/');
-
-    // Écoute les changements d'état d'authentification
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
         _syncUserProfile(user);
@@ -168,7 +168,6 @@ class LandService with ChangeNotifier {
       final doc = await docRef.get();
       
       if (!doc.exists) {
-        // Premier utilisateur (Admin si email correspond)
         String role = 'CITIZEN';
         if (user.email == 'hamsterlecurieux25@gmail.com') {
           role = 'ADMIN';
@@ -178,7 +177,7 @@ class LandService with ChangeNotifier {
           'uid': user.uid,
           'email': user.email,
           'role': role,
-          'displayName': user.displayName ?? 'Utilisateur AfriChain',
+          'displayName': user.displayName ?? 'Utilisateur FoncierChain',
           'createdAt': FieldValue.serverTimestamp(),
         });
         _userRole = role;
@@ -209,24 +208,20 @@ class LandService with ChangeNotifier {
 
   User? get currentUser => _auth.currentUser;
 
-  // Hachage immuable (Blockchain)
   String generateSecureHash(String parcelId, String ownerName) {
     final timestamp = DateTime.now().toIso8601String();
     final bytes = utf8.encode("$parcelId-$ownerName-$timestamp");
     return sha256.convert(bytes).toString();
   }
 
-  // Recherche une parcelle par son ID ou son Adresse
   Future<List<Parcel>> searchParcels(String query) async {
     const String path = 'parcels';
     try {
-      // Recherche par ID exacte
       final qId = await _db.collection(path).where('id', isEqualTo: query.toUpperCase()).get();
       if (qId.docs.isNotEmpty) {
         return qId.docs.map((doc) => Parcel.fromFirestore(doc.data())).toList();
       }
 
-      // Recherche par Adresse
       final qAddr = await _db.collection(path)
           .where('address', isGreaterThanOrEqualTo: query)
           .where('address', isLessThanOrEqualTo: query + '\uf8ff')
@@ -239,7 +234,13 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // ETAPE 1: Initiation Draft (Géomètre)
+  Stream<List<TransactionHistory>> getHistory(String parcelId) {
+    return _db.collection('parcels').doc(parcelId).collection('history')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => TransactionHistory.fromFirestore(doc.data())).toList());
+  }
+
   Future<void> initiateDraft({
     required String parcelId,
     required String ownerName,
@@ -257,7 +258,6 @@ class LandService with ChangeNotifier {
     final docRef = _db.collection(path).doc(parcelId);
     
     try {
-      // Check if exists to reject double attribution
       final doc = await docRef.get();
       if (doc.exists) {
         throw Exception("DOUBLE_ATTRIBUTION: Cette parcelle ($parcelId) est déjà enregistrée.");
@@ -284,7 +284,6 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // ETAPE 2: Validation Communautaire
   Future<void> validateCommunity(String parcelId, String signatureV3) async {
     const String path = 'parcels';
     try {
@@ -298,7 +297,6 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // ETAPE 3: Finalisation État
   Future<void> finalizeLand(String parcelId, String signatureV1) async {
     const String path = 'parcels';
     try {
@@ -310,7 +308,6 @@ class LandService with ChangeNotifier {
         'lastUpdate': FieldValue.serverTimestamp(),
       });
 
-      // Record initial history
       await _db.collection(path).doc(parcelId).collection('history').add({
         'previousOwner': 'ÉTAT',
         'newOwner': 'PREMIER PROPRIÉTAIRE',
@@ -323,7 +320,6 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // TRANSFERT DE PROPRIÉTÉ
   Future<void> transferProperty(String parcelId, String newOwnerName, String newOwnerId) async {
     const String path = 'parcels';
     try {
@@ -345,7 +341,6 @@ class LandService with ChangeNotifier {
         'lastUpdate': FieldValue.serverTimestamp(),
       });
 
-      // Add to history
       await _db.collection(path).doc(parcelId).collection('history').add({
         'previousOwner': previousOwner,
         'newOwner': newOwnerName,
@@ -358,11 +353,9 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // Login via Google (Pour Web/Chrome)
   Future<void> loginWithGoogle() async {
     try {
       GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      // Utilisation du popup pour Chrome (idéal pour le développement Web)
       await _auth.signInWithPopup(googleProvider);
       notifyListeners();
     } catch (e) {
@@ -371,7 +364,6 @@ class LandService with ChangeNotifier {
     }
   }
 
-  // Déconnexion
   Future<void> signOut() async {
     await _auth.signOut();
     notifyListeners();

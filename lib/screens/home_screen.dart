@@ -341,23 +341,42 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFeaturePortals() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth > 700) {
-          return Row(
-            children: [
-              Expanded(child: _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search)),
-              const SizedBox(width: 24),
-              Expanded(child: _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined)),
-            ],
-          );
-        } else {
-          return Column(
-            children: [
-              _buildPortalCard("PORTAIL DE VÉRIFICATION", "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", "Accéder au portail", Icons.search),
-              const SizedBox(height: 24),
-              _buildPortalCard("CARTE INTERACTIVE", "Visualisez le cadastre de Brazzaville en temps réel via AfriChain solutions. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", "Voir la carte", Icons.explore_outlined),
-            ],
-          );
-        }
+        final bool isWide = constraints.maxWidth > 700;
+        final content = [
+          _buildPortalCard(
+            "PORTAIL DE VÉRIFICATION", 
+            "Accédez instantanément au propriétaire légal actuel et à l'historique complet des transactions d'une parcelle en entrant son identifiant unique.", 
+            "Accéder au portail", 
+            Icons.search
+          ),
+          if (isWide) const SizedBox(width: 24) else const SizedBox(height: 24),
+          _buildPortalCard(
+            "CARTE INTERACTIVE", 
+            "Visualisez le cadastre de Brazzaville en temps réel via FoncierChain. Cliquez sur n'importe quelle parcelle pour voir son statut de validation et son certificat numérique.", 
+            "Voir la carte", 
+            Icons.explore_outlined
+          ),
+        ];
+
+        return Column(
+          children: [
+            if (isWide) Row(children: content.map((e) => e is SizedBox ? e : Expanded(child: e)).toList())
+            else ...content,
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                style: GoogleFonts.inter(
+                  color: Colors.white12,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
+          ],
+        );
       },
     );
   }

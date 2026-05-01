@@ -80,13 +80,19 @@ class _MapScreenState extends State<MapScreen> {
                 onTap: () {
                   setState(() {
                     _selectedParcel = Parcel(
-                      id: data['id'],
-                      ownerName: data['owner'],
-                      surface: (data['area'] as num).toDouble(),
+                      id: data['parcelId'] ?? 'ID-MIS',
+                      ownerName: data['owner'] ?? 'Inconnu',
+                      ownerId: 'UID-MAP',
+                      city: data['city'] ?? 'Brazzaville',
+                      neighborhood: data['neighborhood'] ?? '',
                       address: "${data['neighborhood']}, ${data['city']}",
-                      usage: data['usage'],
-                      hash: "0x${data['id'].hashCode.toRadixString(16)}...${data['status']}",
-                      status: data['status'],
+                      cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId']}",
+                      area: (data['surface'] as num?)?.toDouble() ?? 0.0,
+                      price: (data['price'] as num?)?.toDouble() ?? 0.0,
+                      usage: data['usage'] ?? 'NA',
+                      status: data['status'] ?? 'DRAFT',
+                      txId: data['hash'],
+                      lastUpdate: data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now(),
                     );
                   });
                 },
@@ -116,7 +122,7 @@ class _MapScreenState extends State<MapScreen> {
     switch (status) {
       case 'FINALIZED':
         return Colors.green;
-      case 'VALIDATED':
+      case 'COMMUNITY_VALIDATED':
         return Colors.blue;
       default:
         return Colors.orange;
@@ -302,7 +308,7 @@ class _MapScreenState extends State<MapScreen> {
                       Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                       const SizedBox(width: 8),
                       const Text(
-                        "STATUT: VALIDÉ PAR AFRICHAIN",
+                        "STATUT: VALIDÉ PAR FONCIERCHAIN",
                         style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -310,7 +316,7 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 24),
                   _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.surface} m²"),
+                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.area} m²"),
                   const SizedBox(height: 16),
                   _buildInfoTile(Icons.info_outline, "USAGE", _selectedParcel!.usage),
                   const SizedBox(height: 16),
@@ -332,7 +338,7 @@ class _MapScreenState extends State<MapScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              Text("Signé par AfriChain solutions", style: TextStyle(color: Colors.white24, fontSize: 10)),
+                              Text("Signé par FoncierChain solutions", style: TextStyle(color: Colors.white24, fontSize: 10)),
                             ],
                           ),
                         ),

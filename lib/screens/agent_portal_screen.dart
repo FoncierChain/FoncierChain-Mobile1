@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
@@ -177,6 +178,19 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             _buildActionSection(),
             const SizedBox(height: 40),
             _buildRecentOpsSection(),
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                style: GoogleFonts.inter(
+                  color: Colors.white12,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),

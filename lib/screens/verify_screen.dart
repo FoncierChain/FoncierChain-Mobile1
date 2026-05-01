@@ -42,25 +42,27 @@ class _VerifyScreenState extends State<VerifyScreen> {
     });
 
     try {
-      // Fetch from API instead of local land service search
       final mapData = await ApiService.getMapData();
       final query = _controller.text.trim().toLowerCase();
       
-      final results = mapData.where((p) => 
-        p['id'].toString().toLowerCase().contains(query) || 
+      final List<Parcel> results = mapData.where((p) => 
+        p['parcelId'].toString().toLowerCase().contains(query) || 
         p['owner'].toString().toLowerCase().contains(query) ||
         p['neighborhood'].toString().toLowerCase().contains(query)
       ).map((item) => Parcel(
-        id: item['id'],
-        ownerName: item['owner'],
-        neighborhood: item['neighborhood'],
-        city: item['city'],
+        id: item['parcelId'] ?? 'ID-MIS',
+        ownerName: item['owner'] ?? 'Inconnu',
+        ownerId: 'UID-SEARCH',
+        city: item['city'] ?? 'Brazzaville',
+        neighborhood: item['neighborhood'] ?? '',
         address: "${item['neighborhood']}, ${item['city']}",
-        cadastralId: "CAD-${item['id']}",
-        area: (item['area'] as num).toDouble(),
-        usage: item['usage'],
-        status: item['status'],
-        txId: "0x${item['id'].hashCode.toRadixString(16)}blockchainflow",
+        cadastralId: item['cadastralId'] ?? "CAD-${item['parcelId']}",
+        area: (item['surface'] as num?)?.toDouble() ?? 0.0,
+        price: (item['price'] as num?)?.toDouble() ?? 0.0,
+        usage: item['usage'] ?? 'NA',
+        status: item['status'] ?? 'DRAFT',
+        txId: item['hash'],
+        lastUpdate: item['timestamp'] != null ? DateTime.parse(item['timestamp']) : DateTime.now(),
       )).toList();
 
       setState(() {
@@ -110,6 +112,19 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     _buildIdleState(),
                   const SizedBox(height: 48),
                   _buildTrustBadges(),
+                  const SizedBox(height: 60),
+                  Center(
+                    child: Text(
+                      "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                      style: GoogleFonts.inter(
+                        color: Colors.white12,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

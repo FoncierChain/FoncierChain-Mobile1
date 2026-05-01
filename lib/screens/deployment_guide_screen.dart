@@ -49,6 +49,19 @@ class DeploymentGuideScreen extends StatelessWidget {
             ),
             const SizedBox(height: 48),
             _buildFooter(),
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                style: GoogleFonts.inter(
+                  color: Colors.white12,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
           ],
         ),
       ),
@@ -65,7 +78,7 @@ class DeploymentGuideScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const Text(
-          "Ce guide explique comment déployer l'intégralité de la plateforme FancierChain incluant le Backend Django, MySQL et le Smart Contract Hyperledger Fabric.",
+          "Ce guide explique comment déployer l'intégralité de la plateforme FoncierChain incluant le Backend Django, MySQL et le Smart Contract Hyperledger Fabric.",
           style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.5),
         ),
       ],

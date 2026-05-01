@@ -32,7 +32,7 @@ class HelpCenterScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 32),
-            _buildResourceGrid(),
+            _buildResourceGrid(context),
             const SizedBox(height: 48),
             Text(
               "QUESTIONS FRÉQUENTES",
@@ -47,13 +47,26 @@ class HelpCenterScreen extends StatelessWidget {
             _buildFAQSection(),
             const SizedBox(height: 48),
             _buildContactSection(),
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                style: GoogleFonts.inter(
+                  color: Colors.white12,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildResourceGrid() {
+  Widget _buildResourceGrid(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -122,7 +135,7 @@ class HelpCenterScreen extends StatelessWidget {
         _buildFAQItem("Pourquoi une validation communautaire ?", "Pour résoudre le 'problème de l'oracle', un Représentant Communautaire doit confirmer physiquement l'occupation du terrain afin d'éviter les doubles titres."),
         _buildFAQItem("Qu'est-ce que le statut 'FINALIZED' ?", "Cela signifie que l'Agent Foncier de l'État a apposé sa signature finale (V1). Le titre est alors immuable et un NFT représentatif est minté."),
         _buildFAQItem("Comment fonctionnent les enchères ?", "Les enchères sont sécurisées par Hyperledger Fabric. Le transfert de propriété est atomique et ne se produit qu'une fois le paiement finalisé on-chain."),
-        _buildFAQItem("Mes données personnelles sont-elles publiques ?", "Non. FancierChain utilise le partitionnement des données. Seules les métadonnées de la parcelle sont publiques, votre identité reste souveraine et cryptée."),
+        _buildFAQItem("Mes données personnelles sont-elles publiques ?", "Non. FoncierChain utilise le partitionnement des données. Seules les métadonnées de la parcelle sont publiques, votre identité reste souveraine et cryptée."),
       ],
     );
   }

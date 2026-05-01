@@ -86,6 +86,19 @@ class APIDocScreen extends StatelessWidget {
             ),
             const SizedBox(height: 48),
             _buildFooter(),
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                style: GoogleFonts.inter(
+                  color: Colors.white12,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
           ],
         ),
       ),
@@ -106,12 +119,12 @@ class APIDocScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          "FancierChain - Guide Intégration API",
+          "FoncierChain - Guide Intégration API",
           style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
         ),
         const SizedBox(height: 12),
         const Text(
-          "FancierChain est une plateforme décentralisée pour la gouvernance foncière, combinant l'identité souveraine et l'enregistrement de propriété adossé à la blockchain.",
+          "FoncierChain est une plateforme décentralisée pour la gouvernance foncière, combinant l'identité souveraine et l'enregistrement de propriété adossé à la blockchain.",
           style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.5),
         ),
       ],

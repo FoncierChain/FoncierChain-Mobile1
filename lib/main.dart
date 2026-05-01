@@ -34,71 +34,132 @@ class FoncierChainApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (BuildContext context) => LandService()),
       ],
-      child: MaterialApp(
-        title: 'FoncierChain',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0B0E14),
-          primaryColor: const Color(0xFF00963F),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF00963F),
-            brightness: Brightness.dark,
-            primary: const Color(0xFF00963F),
-            secondary: const Color(0xFF00963F),
-            onPrimary: Colors.white,
-            surface: const Color(0xFF161B22),
-          ),
-          textTheme: GoogleFonts.interTextTheme(
-            ThemeData.dark().textTheme,
-          ).copyWith(
-            displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
-            displayMedium: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
-            displaySmall: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
-            headlineLarge: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-            headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-            bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
-            bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
-            labelSmall: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF161B22),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.white10),
+      child: Consumer<LandService>(
+        builder: (context, navService, child) {
+          return MaterialApp(
+            title: 'FoncierChain',
+            debugShowCheckedModeBanner: false,
+            themeMode: navService.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            theme: ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.light,
+              scaffoldBackgroundColor: Colors.grey[50],
+              primaryColor: const Color(0xFF00963F),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF00963F),
+                brightness: Brightness.light,
+                primary: const Color(0xFF00963F),
+                surface: Colors.white,
+              ),
+              textTheme: GoogleFonts.interTextTheme(
+                ThemeData.light().textTheme,
+              ).copyWith(
+                displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black87),
+                headlineLarge: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.black87),
+                bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.black12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.black12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFF00963F), width: 2),
+                ),
+                hintStyle: GoogleFonts.inter(color: Colors.black26, fontSize: 14),
+              ),
+              cardTheme: CardThemeData(
+                color: Colors.white,
+                elevation: 2,
+                shadowColor: Colors.black12,
+                shape: RoundedRectangleBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  side: const BorderSide(color: Colors.black12),
+                ),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00963F),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.white10),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.dark,
+              scaffoldBackgroundColor: const Color(0xFF0B0E14),
+              primaryColor: const Color(0xFF00963F),
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFF00963F),
+                brightness: Brightness.dark,
+                primary: const Color(0xFF00963F),
+                secondary: const Color(0xFF00963F),
+                onPrimary: Colors.white,
+                surface: const Color(0xFF161B22),
+              ),
+              textTheme: GoogleFonts.interTextTheme(
+                ThemeData.dark().textTheme,
+              ).copyWith(
+                displayLarge: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
+                displayMedium: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
+                displaySmall: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
+                headlineLarge: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+                bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
+                labelSmall: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: const Color(0xFF161B22),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.white10),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.white10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFF00963F), width: 2),
+                ),
+                hintStyle: GoogleFonts.inter(color: Colors.white24, fontSize: 14),
+              ),
+              cardTheme: CardThemeData(
+                color: const Color(0xFF161B22),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  side: BorderSide(color: Colors.white.withOpacity(0.05)),
+                ),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00963F),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF00963F), width: 2),
-            ),
-            hintStyle: GoogleFonts.inter(color: Colors.white24, fontSize: 14),
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFF161B22),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
-              side: BorderSide(color: Colors.white.withOpacity(0.05)),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00963F),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-        home: const MainNavigationShell(),
+            home: const MainNavigationShell(),
+          );
+        },
       ),
     );
   }

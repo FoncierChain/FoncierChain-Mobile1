@@ -80,4 +80,14 @@ class ApiService {
     );
     return jsonDecode(response.body);
   }
+
+  static Future<Map<String, dynamic>> getLandHistory(String landId) async {
+    final response = await http.get(Uri.parse('$baseUrl/land/$landId/history/'));
+    return jsonDecode(response.body);
+  }
+
+  static Future<List<dynamic>> citizenVerify(String query) async {
+    final response = await http.get(Uri.parse('$baseUrl/citizen/verify?land_id=$query'));
+    return jsonDecode(response.body);
+  }
 }

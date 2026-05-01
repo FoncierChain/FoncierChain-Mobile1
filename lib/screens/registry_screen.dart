@@ -70,6 +70,19 @@ class _PublicRegistryScreenState extends State<PublicRegistryScreen> {
                     return _buildBlockItem(block);
                   },
                 ),
+                const SizedBox(height: 60),
+                Center(
+                  child: Text(
+                    "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+                    style: GoogleFonts.inter(
+                      color: Colors.white12,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 48),
             ],
           ),
         ),
