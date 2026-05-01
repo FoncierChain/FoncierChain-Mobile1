@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
 
@@ -37,15 +38,18 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final navService = Provider.of<LandService>(context);
+    final bool isDark = navService.isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E14),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          _buildMap(),
-          _buildTopOverlay(),
-          _buildSideStats(),
-          if (_selectedParcel != null) _buildDetailsPanel(),
-          _buildMapControls(),
+          _buildMap(isDark),
+          _buildTopOverlay(isDark),
+          _buildSideStats(isDark),
+          if (_selectedParcel != null) _buildDetailsPanel(isDark),
+          _buildMapControls(isDark),
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(color: Color(0xFF00963F)),
@@ -55,7 +59,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMap() {
+  Widget _buildMap(bool isDark) {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -65,7 +69,9 @@ class _MapScreenState extends State<MapScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          urlTemplate: isDark 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
         ),
         MarkerLayer(
@@ -129,8 +135,11 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  Widget _buildTopOverlay(bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final hintColor = isDark ? Colors.white24 : Colors.black26;
 
-  Widget _buildTopOverlay() {
     return Positioned(
       top: 64,
       left: 16,
@@ -141,10 +150,10 @@ class _MapScreenState extends State<MapScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
+                color: containerColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white10),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15)],
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15)],
               ),
               child: TextField(
                 decoration: InputDecoration(
@@ -154,9 +163,9 @@ class _MapScreenState extends State<MapScreen> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   fillColor: Colors.transparent,
-                  hintStyle: GoogleFonts.inter(fontSize: 14, color: Colors.white24),
+                  hintStyle: GoogleFonts.inter(fontSize: 14, color: hintColor),
                 ),
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textColor),
               ),
             ),
           ),
@@ -164,20 +173,22 @@ class _MapScreenState extends State<MapScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF161B22),
+              color: containerColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
             ),
-            child: const Icon(Icons.filter_list, color: Colors.white70, size: 20),
+            child: Icon(Icons.filter_list, color: isDark ? Colors.white70 : Colors.black54, size: 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSideStats() {
+  Widget _buildSideStats(bool isDark) {
     final bool isWide = MediaQuery.of(context).size.width > 900;
     if (!isWide) return const SizedBox.shrink();
+
+    final containerColor = isDark ? const Color(0xFF161B22).withOpacity(0.9) : Colors.white.withOpacity(0.9);
 
     return Positioned(
       left: 24,
@@ -186,10 +197,10 @@ class _MapScreenState extends State<MapScreen> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22).withOpacity(0.9),
+          color: containerColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)],
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 40)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,44 +208,44 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             const Text("STATISTIQUES CADAS.", style: TextStyle(color: Color(0xFF00963F), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
             const SizedBox(height: 20),
-            _buildMiniStat("12,450", "Parcelles", Icons.home_work),
+            _buildMiniStat("12,450", "Parcelles", Icons.home_work, isDark),
             const SizedBox(height: 16),
-            _buildMiniStat("98%", "Validées", Icons.verified),
+            _buildMiniStat("98%", "Validées", Icons.verified, isDark),
             const SizedBox(height: 16),
-            _buildMiniStat("14", "En litige", Icons.report_problem),
+            _buildMiniStat("14", "En litige", Icons.report_problem, isDark),
             const SizedBox(height: 16),
-            _buildMiniStat("156", "En attente", Icons.pending_actions),
+            _buildMiniStat("156", "En attente", Icons.pending_actions, isDark),
             const SizedBox(height: 24),
-            const Divider(color: Colors.white10),
+            Divider(color: isDark ? Colors.white10 : Colors.black12),
             const SizedBox(height: 20),
-            const Text("FILTRES RAPIDES", style: TextStyle(color: Colors.white24, fontSize: 10)),
+            Text("FILTRES RAPIDES", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
             const SizedBox(height: 12),
-            _buildCheckItem("Zone Résidentielle", true),
-            _buildCheckItem("Zone Commerciale", false),
-            _buildCheckItem("Espaces Verts", true),
+            _buildCheckItem("Zone Résidentielle", true, isDark),
+            _buildCheckItem("Zone Commerciale", false, isDark),
+            _buildCheckItem("Espaces Verts", true, isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMiniStat(String value, String label, IconData icon) {
+  Widget _buildMiniStat(String value, String label, IconData icon, bool isDark) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white30, size: 16),
+        Icon(icon, color: isDark ? Colors.white30 : Colors.black26, size: 16),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+            Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
+            Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildCheckItem(String label, bool value) {
+  Widget _buildCheckItem(String label, bool value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -245,19 +256,20 @@ class _MapScreenState extends State<MapScreen> {
             decoration: BoxDecoration(
               color: value ? const Color(0xFF00963F) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: value ? const Color(0xFF00963F) : Colors.white10),
+              border: Border.all(color: value ? const Color(0xFF00963F) : (isDark ? Colors.white10 : Colors.black12)),
             ),
             child: value ? const Icon(Icons.check, color: Colors.white, size: 10) : null,
           ),
           const SizedBox(width: 12),
-          Text(label, style: TextStyle(color: value ? Colors.white70 : Colors.white24, fontSize: 11)),
+          Text(label, style: TextStyle(color: value ? (isDark ? Colors.white70 : Colors.black87) : (isDark ? Colors.white24 : Colors.black26), fontSize: 11)),
         ],
       ),
     );
   }
 
-  Widget _buildDetailsPanel() {
+  Widget _buildDetailsPanel(bool isDark) {
     final bool isWide = MediaQuery.of(context).size.width > 900;
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
 
     return Positioned(
       top: isWide ? 130 : null,
@@ -267,10 +279,10 @@ class _MapScreenState extends State<MapScreen> {
       width: isWide ? 380 : null,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: containerColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 40)],
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), blurRadius: 40)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -278,20 +290,20 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white10)),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.black12)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                    Text(
                     "DÉTAILS PARCELLE",
-                    style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () => setState(() => _selectedParcel = null),
-                    icon: const Icon(Icons.close, size: 18, color: Colors.white38),
-                    style: IconButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.05)),
+                    icon: Icon(Icons.close, size: 18, color: isDark ? Colors.white38 : Colors.black38),
+                    style: IconButton.styleFrom(backgroundColor: (isDark ? Colors.white : Colors.black).withOpacity(0.05)),
                   ),
                 ],
               ),
@@ -301,7 +313,7 @@ class _MapScreenState extends State<MapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_selectedParcel!.id, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+                  Text(_selectedParcel!.id, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: isDark ? Colors.white : Colors.black87)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -314,31 +326,35 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName),
+                  _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName, isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.area} m²"),
+                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.area} m²", isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.info_outline, "USAGE", _selectedParcel!.usage),
+                  _buildInfoTile(Icons.info_outline, "USAGE", _selectedParcel!.usage, isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address),
+                  _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address, isDark),
                   const SizedBox(height: 24),
-                  const Divider(color: Colors.white10),
+                  Divider(color: isDark ? Colors.white10 : Colors.black12),
                   const SizedBox(height: 16),
-                  const Text("CERTIFICAT NUMÉRIQUE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white38)),
+                  Text("CERTIFICAT NUMÉRIQUE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.black26 : Colors.grey[100], 
+                      borderRadius: BorderRadius.circular(12), 
+                      border: Border.all(color: isDark ? Colors.white10 : Colors.black12)
+                    ),
                     child: Row(
                       children: [
-                        const Icon(Icons.description_outlined, color: Colors.white38),
+                        Icon(Icons.description_outlined, color: isDark ? Colors.white38 : Colors.black38),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              Text("Signé par FoncierChain solutions", style: TextStyle(color: Colors.white24, fontSize: 10)),
+                              Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white : Colors.black87)),
+                              Text("Signé par FoncierChain solutions", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
                             ],
                           ),
                         ),
@@ -364,53 +380,56 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value) {
+  Widget _buildInfoTile(IconData icon, String label, String value, bool isDark) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: Colors.white38, size: 18),
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.black).withOpacity(0.05), 
+            borderRadius: BorderRadius.circular(8)
+          ),
+          child: Icon(icon, color: isDark ? Colors.white38 : Colors.black38, size: 18),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+            Text(label, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold)),
+            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMapControls() {
+  Widget _buildMapControls(bool isDark) {
     return Positioned(
       bottom: 24,
       left: 24,
       child: Column(
         children: [
-          _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
+          _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1), isDark),
           const SizedBox(height: 8),
-          _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
+          _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1), isDark),
         ],
       ),
     );
   }
 
-  Widget _buildMapButton(IconData icon, VoidCallback onTap) {
+  Widget _buildMapButton(IconData icon, VoidCallback onTap, bool isDark) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
+          color: isDark ? const Color(0xFF161B22) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)],
+          border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
         ),
-        child: Icon(icon, size: 20, color: Colors.white70),
+        child: Icon(icon, size: 20, color: isDark ? Colors.white70 : Colors.black54),
       ),
     );
   }
