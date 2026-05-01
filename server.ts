@@ -10,9 +10,10 @@ app.use(express.json());
 
 // --- Mock Database ---
 let parcels = [
-  { parcelId: "bz-101", cadastralId: "CAD-101", owner: "Jean Mokoko", city: "Brazzaville", neighborhood: "Poto-Poto", surface: 450, price: 5000000, status: "FINALIZED", usage: "Residentiel", lat: -4.26, lng: 15.28, hash: "0x7a2...f41" },
-  { parcelId: "bz-102", cadastralId: "CAD-102", owner: "Marie Samba", city: "Brazzaville", neighborhood: "Moungali", surface: 600, price: 12000000, status: "COMMUNITY_VALIDATED", usage: "Commercial", lat: -4.27, lng: 15.29, hash: "0x9b1...e22" },
-  { parcelId: "bz-103", cadastralId: "CAD-103", owner: "Pierre Okombi", city: "Brazzaville", neighborhood: "Bacongo", surface: 300, price: 3500000, status: "DRAFT", usage: "Residentiel", lat: -4.28, lng: 15.27, hash: "0x1c3...a88" },
+  { parcelId: "34", cadastralId: "CAD-34", owner: "1122SDE", city: "Brazzaville", neighborhood: "AAZZ", surface: 12222, price: 5000000, status: "COMMUNITY_VALIDATED", usage: "Résidentiel", lat: -4.2634, lng: 15.2832, hash: "0x86e...a79", createdAt: "2026-05-01 12:08:18" },
+  { parcelId: "30", cadastralId: "CAD-30", owner: "SHDH", city: "Brazzaville", neighborhood: "POTO-POTO", surface: 233, price: 12000000, status: "FINALIZED", usage: "Résidentiel", lat: -4.2640, lng: 15.2840, hash: "0x624...ea4", createdAt: "2026-05-01 12:11:53" },
+  { parcelId: "55", cadastralId: "CAD-55", owner: "244", city: "Brazzaville", neighborhood: "POTO-POTO", surface: 25, price: 3500000, status: "DRAFT", usage: "Résidentiel", lat: -4.2628, lng: 15.2825, hash: "0x02d...43a", createdAt: "2026-05-01 12:18:51" },
+  { parcelId: "1", cadastralId: "CAD-1", owner: "12", city: "Brazzaville", neighborhood: "POTO_POTO", surface: 12, price: 1500000, status: "FINALIZED", usage: "Résidentiel", lat: -4.2650, lng: 15.2810, hash: "0x6b8...4ea", createdAt: "2026-05-01 12:24:29" },
 ];
 
 const ledger = [
