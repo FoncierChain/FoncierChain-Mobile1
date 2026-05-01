@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../services/land_service.dart';
 
 class APIDocScreen extends StatelessWidget {
   const APIDocScreen({super.key});
@@ -236,10 +238,9 @@ class APIDocScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF00963F).withOpacity(0.05),
+        color: isDark ? const Color(0xFF00963F).withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF00963F).withOpacity(0.1)),
-        color: isDark ? null : Colors.white,
       ),
       child: Row(
         children: [

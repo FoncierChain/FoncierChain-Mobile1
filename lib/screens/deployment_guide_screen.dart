@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../services/land_service.dart';
 
 class DeploymentGuideScreen extends StatelessWidget {
   const DeploymentGuideScreen({super.key});
@@ -142,10 +144,9 @@ class DeploymentGuideScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.05),
+        color: isDark ? Colors.amber.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.withOpacity(0.1)),
-        color: isDark ? null : Colors.white,
       ),
       child: Row(
         children: [

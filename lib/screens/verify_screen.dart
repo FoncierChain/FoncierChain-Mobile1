@@ -242,7 +242,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
             onTap: () => setState(() => _selectedParcel = p),
             title: Text(p.address, style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
             subtitle: Text(p.id, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
-            trailing: Icon(Icons.chevron_right, color: isDark ? Colors.white24 : Colors.black24),
+            trailing: Icon(Icons.chevron_right, color: isDark ? Colors.white24 : Colors.black12),
           ),
         )).toList(),
       ],
