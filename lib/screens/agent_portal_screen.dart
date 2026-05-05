@@ -246,7 +246,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black10, borderRadius: BorderRadius.circular(2))),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.1), borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
               Text("ASSISTANT FONCIER AI", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
               const Divider(),
@@ -429,7 +429,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 12),
-        Expanded(child: Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black70, fontSize: 12, fontWeight: FontWeight.bold))),
+        Expanded(child: Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold))),
         Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900)),
       ],
     );
@@ -821,7 +821,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black10, style: BorderStyle.solid),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.1), style: BorderStyle.solid),
               ),
               child: const Icon(Icons.add_a_photo_outlined, size: 32, color: Colors.grey),
             ),
