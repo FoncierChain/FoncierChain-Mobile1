@@ -59,7 +59,23 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  String _getTileUrl(MapLayerType type) {
+    switch (type) {
+      case MapLayerType.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case MapLayerType.terrain:
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      case MapLayerType.street:
+      default:
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  }
+
   Widget _buildMap(bool isDark) {
+    final service = Provider.of<LandService>(context);
+    final currentMapType = service.currentMapType;
+    final protectedZones = service.protectedZones;
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -69,10 +85,19 @@ class _MapScreenState extends State<MapScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: isDark 
-            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+          urlTemplate: _getTileUrl(currentMapType),
           subdomains: const ['a', 'b', 'c', 'd'],
+        ),
+        PolygonLayer(
+          polygons: protectedZones.map((z) => Polygon(
+            points: z.polygon,
+            color: Colors.red.withOpacity(0.2),
+            borderColor: Colors.red,
+            borderStrokeWidth: 2,
+            isFilled: true,
+            label: z.name,
+            labelStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          )).toList(),
         ),
         MarkerLayer(
           markers: _mapData.map((data) {
@@ -421,15 +446,42 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildMapControls(bool isDark) {
+    final service = Provider.of<LandService>(context);
+    final currentMapType = service.currentMapType;
+
     return Positioned(
       bottom: 24,
       left: 24,
       child: Column(
         children: [
+          _buildMapTypeControl(Icons.map, MapLayerType.street, currentMapType, isDark, service),
+          const SizedBox(height: 8),
+          _buildMapTypeControl(Icons.satellite_alt, MapLayerType.satellite, currentMapType, isDark, service),
+          const SizedBox(height: 8),
+          _buildMapTypeControl(Icons.landscape, MapLayerType.terrain, currentMapType, isDark, service),
+          const SizedBox(height: 16),
           _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1), isDark),
           const SizedBox(height: 8),
           _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1), isDark),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMapTypeControl(IconData icon, MapLayerType type, MapLayerType current, bool isDark, LandService service) {
+    bool isSelected = type == current;
+    return GestureDetector(
+      onTap: () => service.setMapType(type),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF00963F) : (isDark ? const Color(0xFF161B22) : Colors.white),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? const Color(0xFF00963F) : (isDark ? Colors.white10 : Colors.black12)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
+        ),
+        child: Icon(icon, size: 20, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
       ),
     );
   }

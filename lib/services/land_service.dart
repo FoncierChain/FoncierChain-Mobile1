@@ -1,7 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:latlong2/latlong.dart';
 import 'api_service.dart';
+
+enum MapLayerType { street, satellite, terrain }
+
+class ProtectedZone {
+  final String name;
+  final List<LatLng> polygon;
+  final String reason;
+
+  ProtectedZone({required this.name, required this.polygon, required this.reason});
+}
 
 class AppUser {
   final String uid;
@@ -9,6 +20,7 @@ class AppUser {
   final String displayName;
   final String role;
   final String? photoURL;
+  final bool isKYCVerified;
 
   AppUser({
     required this.uid,
@@ -16,6 +28,7 @@ class AppUser {
     required this.displayName,
     required this.role,
     this.photoURL,
+    this.isKYCVerified = false,
   });
 }
 
@@ -122,8 +135,104 @@ class LandService with ChangeNotifier {
   AppUser? _currentUser;
   AppUser? get currentUser => _currentUser;
 
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  bool _isOffline = false;
+  bool get isOffline => _isOffline;
+
+  Map<String, List<String>> _congoGeoData = {
+    "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
+    "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
+  };
+  Map<String, List<String>> get congoGeoData => _congoGeoData;
+
+  MapLayerType _currentMapType = MapLayerType.street;
+  MapLayerType get currentMapType => _currentMapType;
+
+  void setMapType(MapLayerType type) {
+    _currentMapType = type;
+    notifyListeners();
+  }
+
+  final List<ProtectedZone> _protectedZones = [
+    ProtectedZone(
+      name: "Palais du Peuple (Zone État)",
+      polygon: [
+        LatLng(-4.2710, 15.2810),
+        LatLng(-4.2730, 15.2810),
+        LatLng(-4.2730, 15.2830),
+        LatLng(-4.2710, 15.2830),
+      ],
+      reason: "Siège des institutions de la République. Inaliénable.",
+    ),
+    ProtectedZone(
+      name: "Parc National d'Odzala (Zone Verte)",
+      polygon: [
+        LatLng(0.8000, 14.8000),
+        LatLng(1.2000, 14.8000),
+        LatLng(1.2000, 15.2000),
+        LatLng(0.8000, 15.2000),
+      ],
+      reason: "Patrimoine naturel protégé. Aucune exploitation foncière autorisée.",
+    ),
+  ];
+  List<ProtectedZone> get protectedZones => _protectedZones;
+
+  LatLng getCenterForLocation(String city, String neighborhood) {
+    // Basic approximate coordinates
+    if (city == "Brazzaville") {
+      if (neighborhood == "Madibou") return LatLng(-4.3168, 15.1914);
+      if (neighborhood == "Talangaï") return LatLng(-4.2341, 15.3045);
+      return LatLng(-4.2634, 15.2832);
+    }
+    if (city == "Pointe-Noire") {
+      return LatLng(-4.7787, 11.8594);
+    }
+    return LatLng(-4.2634, 15.2832);
+  }
+
   int _currentTabIndex = 0;
   int get currentTabIndex => _currentTabIndex;
+
+  Future<void> fetchGeoData() async {
+    try {
+      final res = await ApiService.getCongoGeoData();
+      _isOffline = res['is_offline'] == true;
+      if (res['status'] == 'SUCCESS' && res['data'] != null) {
+        Map<String, List<String>> newData = {};
+        (res['data'] as Map).forEach((key, value) {
+          newData[key.toString()] = List<String>.from(value);
+        });
+        _congoGeoData = newData;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("GeoData error: $e");
+    }
+  }
+
+  Future<void> verifyKYC(String idNumber) async {
+    if (_currentUser == null) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.verifyKYC(_currentUser!.uid, idNumber);
+      _isOffline = res['is_offline'] == true;
+      if (res['status'] == 'SUCCESS') {
+        _currentUser = AppUser(
+          uid: _currentUser!.uid,
+          email: _currentUser!.email,
+          displayName: _currentUser!.displayName,
+          role: _currentUser!.role,
+          isKYCVerified: true,
+        );
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
   String? _pendingSearchQuery;
   String? get pendingSearchQuery => _pendingSearchQuery;
 
@@ -165,6 +274,7 @@ class LandService with ChangeNotifier {
   Future<void> login(String username, String password) async {
     try {
       final res = await ApiService.login(username, password);
+      _isOffline = res['is_offline'] == true;
       if (res.containsKey('token')) {
         _currentUser = AppUser(
           uid: 'UID-${res['user']?['id'] ?? '1'}',
@@ -190,10 +300,13 @@ class LandService with ChangeNotifier {
     notifyListeners();
   }
 
-  String generateSecureHash(String parcelId, String ownerName) {
-    final timestamp = DateTime.now().toIso8601String();
-    final bytes = utf8.encode("$parcelId-$ownerName-$timestamp");
-    return sha256.convert(bytes).toString();
+  String generateSecureSignature(String parcelId, String targetStatus) {
+    // Requirements: SECURED-[HMAC_SHA256(parcelId:targetStatus, secret)]
+    final secret = "FONCIERCHAIN-SECRET-2026";
+    final data = "$parcelId:$targetStatus:$secret";
+    final bytes = utf8.encode(data);
+    final hash = sha256.convert(bytes).toString();
+    return "SECURED-$hash";
   }
 
   Future<List<Parcel>> searchParcels(String query) async {
@@ -230,20 +343,27 @@ class LandService with ChangeNotifier {
     required String address,
     required String signatureV2,
     required String documentHash,
+    double? lat,
+    double? lng,
   }) async {
+    _isLoading = true;
+    notifyListeners();
     try {
       final response = await ApiService.createDraft({
-        'id': parcelId,
+        'parcelId': parcelId,
+        'cadastralId': cadastralId,
         'owner': ownerId,
         'city': city,
         'neighborhood': neighborhood,
-        'address': address,
-        'area': area,
-        'cadastralId': cadastralId,
-        'documentHash': documentHash,
-        'signatureV2': signatureV2,
+        'surface': area,
         'price': price,
+        'signatureV2': generateSecureSignature(parcelId, "DRAFT"),
+        'documentHash': documentHash,
+        'address': address,
+        'lat': lat ?? -4.26, 
+        'lng': lng ?? 15.28
       });
+      _isOffline = response['is_offline'] == true;
 
       if (response['status'] == 'FAILED') {
         throw Exception(response['message'] ?? "Erreur d'initiation");
@@ -253,12 +373,18 @@ class LandService with ChangeNotifier {
     } catch (e) {
       debugPrint("Erreur Draft: $e");
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<void> validateCommunity(String parcelId, String signatureV3) async {
+  Future<void> validateCommunity(String parcelId) async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      final response = await ApiService.validateLand(parcelId, signatureV3);
+      final signature = generateSecureSignature(parcelId, "COMMUNITY_VALIDATED");
+      final response = await ApiService.validateLand(parcelId, signature);
       if (response['status'] == 'FAILED') {
         throw Exception(response['message'] ?? "Erreur de validation");
       }
@@ -266,12 +392,18 @@ class LandService with ChangeNotifier {
     } catch (e) {
       debugPrint("Erreur Validation: $e");
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<void> finalizeLand(String parcelId, String signatureV1) async {
+  Future<void> finalizeLand(String parcelId) async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      final response = await ApiService.finalizeLand(parcelId, signatureV1);
+      final signature = generateSecureSignature(parcelId, "FINALIZED");
+      final response = await ApiService.finalizeLand(parcelId, signature);
       if (response['status'] == 'FAILED') {
         throw Exception(response['message'] ?? "Erreur de finalisation");
       }
@@ -279,11 +411,38 @@ class LandService with ChangeNotifier {
     } catch (e) {
       debugPrint("Erreur Finalisation: $e");
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<void> transferProperty(String parcelId, String newOwnerName, String newOwnerId) async {
-    // Current API might not have a transfer endpoint yet, but we'd call it here
+  Future<void> transferProperty(String parcelId, String newOwnerId) async {
+    _isLoading = true;
     notifyListeners();
+    try {
+      final res = await ApiService.mutateLand(parcelId, newOwnerId);
+      if (res['status'] == 'FAILED') {
+        throw Exception(res['message'] ?? "Erreur de mutation");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> reportDispute(String parcelId, String reason) async {
+    if (_currentUser == null) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.reportDispute(parcelId, reason, _currentUser!.uid);
+      if (res['status'] == 'FAILED') {
+        throw Exception(res['message'] ?? "Erreur lors du signalement");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

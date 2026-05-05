@@ -268,31 +268,63 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           Positioned(
             top: 50,
             right: 20,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => navService.toggleTheme(),
-                borderRadius: BorderRadius.circular(30),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-                  ),
-                  child: Icon(
-                    isDark ? Icons.light_mode : Icons.dark_mode,
-                    color: isDark ? Colors.amber : Colors.indigo,
-                    size: 20,
+            child: Row(
+              children: [
+                if (navService.currentUser != null && !navService.currentUser!.isKYCVerified)
+                  _buildKYCWarning(isDark),
+                const SizedBox(width: 12),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => navService.toggleTheme(),
+                    borderRadius: BorderRadius.circular(30),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                      ),
+                      child: Icon(
+                        isDark ? Icons.light_mode : Icons.dark_mode,
+                        color: isDark ? Colors.amber : Colors.indigo,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
+          _buildNetworkBanner(isDark),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(navService.currentTabIndex, isDark),
     );
+  }
+
+  Widget _buildKYCWarning(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+          const SizedBox(width: 8),
+          const Text("KYC NECESSAIRE", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkBanner(bool isDark) {
+    // This is a simple placeholder. In a real app, you'd use a connectivity plugin.
+    // For this demo, we assume internet is active unless an API call fails.
+    return const SizedBox.shrink();
   }
 
   Widget _buildBottomNav(int currentIndex, bool isDark) {
