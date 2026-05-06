@@ -181,11 +181,6 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           child: Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showChatbot(context, isDark),
-        backgroundColor: const Color(0xFF00963F),
-        child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -203,8 +198,6 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             _buildActionSection(isDark),
             const SizedBox(height: 40),
             _buildConsensusMonitor(isDark),
-            const SizedBox(height: 40),
-            _buildSupportSection(isDark),
             const SizedBox(height: 40),
             _buildRecentOpsSection(isDark),
             const SizedBox(height: 60),
@@ -226,172 +219,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  final List<Map<String, dynamic>> _chatHistory = [
-    {"text": "Bonjour ! Je suis l'assistant FoncierChain. Comment puis-je vous aider ?", "isMe": false},
-  ];
   final TextEditingController _chatController = TextEditingController();
-
-  void _showChatbot(BuildContext context, bool isDark) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161B22) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.1), borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              Text("ASSISTANT FONCIER AI", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
-              const Divider(),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: _chatHistory.length,
-                  itemBuilder: (context, i) => _buildChatBubble(_chatHistory[i]['text'], _chatHistory[i]['isMe'], isDark),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(child: _buildSimpleField(_chatController, "Posez votre question...", Icons.chat_outlined, isDark)),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      icon: const Icon(Icons.send, color: Color(0xFF00963F)),
-                      onPressed: () {
-                        if (_chatController.text.isEmpty) return;
-                        final userMsg = _chatController.text;
-                        setModalState(() {
-                          _chatHistory.add({"text": userMsg, "isMe": true});
-                        });
-                        _chatController.clear();
-                        
-                        // Real AI logic if available, else fallback
-                        try {
-                          ApiService.sendChatMessage(userMsg).then((res) {
-                            String botReply = res['reply'] ?? res['message'] ?? "Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?";
-                            setModalState(() {
-                              _chatHistory.add({"text": botReply, "isMe": false});
-                            });
-                          });
-                        } catch (e) {
-                          setModalState(() {
-                            _chatHistory.add({"text": "Erreur de connexion au chatbot.", "isMe": false});
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatBubble(String text, bool isMe, bool isDark) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF00963F) : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
-          borderRadius: BorderRadius.circular(20).copyWith(
-            bottomLeft: isMe ? const Radius.circular(20) : Radius.zero,
-            bottomRight: isMe ? Radius.zero : const Radius.circular(20),
-          ),
-        ),
-        child: Text(text, style: TextStyle(color: isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 13)),
-      ),
-    );
-  }
-
-  Widget _buildSupportSection(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("SUPPORT & TICKETS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161B22) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
-          ),
-          child: Column(
-            children: [
-              _buildTicketRow("Double attribution signalée - Moungali", "OUVERT", Colors.red, isDark),
-              const Divider(),
-              _buildTicketRow("Besoin de validation - Talangaï", "EN COURS", Colors.orange, isDark),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => _showCreateTicketDialog(context, isDark),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text("Nouveau Ticket"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
-                  elevation: 0,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showCreateTicketDialog(BuildContext context, bool isDark) {
-    final subjectController = TextEditingController();
-    final descController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
-        title: const Text("Ouvrir un nouveau ticket"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogField(subjectController, "Sujet (ex: Erreur Cadastre)", isDark),
-            _buildDialogField(descController, "Description du problème", isDark),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await ApiService.createTicket({
-                  'subject': subjectController.text,
-                  'description': descController.text,
-                  'priority': 'URGENT',
-                  'email': Provider.of<LandService>(context, listen: false).currentUser?.email ?? 'agent@foncierchain.cg'
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ticket créé avec succès")));
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
-            child: const Text("Envoyer"),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildConsensusMonitor(bool isDark) {
     return Column(

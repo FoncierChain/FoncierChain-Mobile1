@@ -255,6 +255,27 @@ class LandService with ChangeNotifier {
   String _userRole = 'CITIZEN';
   String get userRole => _simulatedRole ?? _userRole;
 
+  final List<Map<String, dynamic>> _chatHistory = [
+    {"text": "Bonjour ! Je suis l'assistant FoncierChain. Comment puis-je vous aider ?", "isMe": false},
+  ];
+  List<Map<String, dynamic>> get chatHistory => _chatHistory;
+
+  void addChatMessage(String text, bool isMe) {
+    _chatHistory.add({"text": text, "isMe": isMe});
+    notifyListeners();
+  }
+
+  Future<void> sendChatMessage(String message) async {
+    addChatMessage(message, true);
+    try {
+      final res = await ApiService.sendChatMessage(message);
+      String botReply = res['reply'] ?? res['message'] ?? "Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?";
+      addChatMessage(botReply, false);
+    } catch (e) {
+      addChatMessage("Erreur de connexion au chatbot.", false);
+    }
+  }
+
   void setTabIndex(int index, {String? searchQuery}) {
     _currentTabIndex = index;
     if (searchQuery != null) {
@@ -309,12 +330,27 @@ class LandService with ChangeNotifier {
     return "SECURED-$hash";
   }
 
+  String? _lastSearchError;
+  String? get lastSearchError => _lastSearchError;
+
   Future<List<Parcel>> searchParcels(String query) async {
+    _lastSearchError = null;
+    notifyListeners();
     try {
       final results = await ApiService.citizenVerify(query);
-      return results.map((item) => Parcel.fromMap(item)).toList();
+      if (results is Map && results.containsKey('error')) {
+        _lastSearchError = results['error'];
+        notifyListeners();
+        return [];
+      }
+      if (results is List) {
+        return results.map((item) => Parcel.fromMap(item)).toList();
+      }
+      return [];
     } catch (e) {
       debugPrint("Erreur Search: $e");
+      _lastSearchError = "Une erreur est survenue lors de la recherche";
+      notifyListeners();
       return [];
     }
   }

@@ -213,7 +213,29 @@ app.get('/api/v1/registry/public/', (req: Request, res: Response) => {
 app.get('/api/v1/citizen/verify', (req: Request, res: Response) => {
   const query = (req.query.land_id as string || '').toLowerCase();
   const results = parcels.filter(p => p.parcelId.toLowerCase().includes(query));
+  
+  if (results.length === 0) {
+    return res.status(404).json({ error: "Parcelle non trouvée" });
+  }
+  
   res.json(results);
+});
+
+// --- Support ---
+app.post('/api/v1/support/chat', (req: Request, res: Response) => {
+  const { message } = req.body;
+  res.json({
+    status: "SUCCESS",
+    reply: `Réponse de l'IA FoncierChain à: "${message}". En tant qu'expert du Cadastre de Brazzaville, je vous conseille de vérifier le Trust Score sur la carte.`
+  });
+});
+
+app.post('/api/v1/support/tickets', (req: Request, res: Response) => {
+  res.status(201).json({
+    status: "SUCCESS",
+    message: "Ticket créé",
+    ticket_id: "TKT-" + Math.floor(Math.random() * 10000)
+  });
 });
 
 // --- Map Data ---
@@ -233,6 +255,16 @@ app.get('/api/v1/land/:land_id/history/', (req: Request, res: Response) => {
     history: [
       { txId: "0xabc...", action: "CREATED", timestamp: new Date().toISOString(), value: { status: "DRAFT" } }
     ]
+  });
+});
+
+app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
+  res.json({
+    status: 'SUCCESS',
+    data: {
+      "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
+      "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
+    }
   });
 });
 

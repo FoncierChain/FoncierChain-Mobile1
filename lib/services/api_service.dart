@@ -154,8 +154,12 @@ class ApiService {
     ));
   }
 
-  static Future<List<dynamic>> citizenVerify(String query) async {
-    final response = await http.get(Uri.parse('$baseUrl/citizen/verify?land_id=$query'));
-    return jsonDecode(response.body);
+  static Future<dynamic> citizenVerify(String query) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/citizen/verify?land_id=$query'));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': 'Erreur de connexion au registre citoyen'};
+    }
   }
 }

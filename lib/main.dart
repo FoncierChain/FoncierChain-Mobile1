@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'screens/home_screen.dart';
 import 'screens/verify_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/agent_portal_screen.dart';
 import 'screens/help_center_screen.dart';
 import 'services/land_service.dart';
+import 'services/api_service.dart';
 import 'widgets/neural_background.dart';
 
 // FoncierChain Brazzaville - Main Entry Point
@@ -248,8 +250,174 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     const AgentPortalScreen(),
   ];
 
+  final TextEditingController _chatController = TextEditingController();
+
   void _onTabTapped(int index) {
     Provider.of<LandService>(context, listen: false).setTabIndex(index);
+  }
+
+  void _launchGemini() async {
+    final url = Uri.parse('https://gemini.google.com/gem/1sjFSlXDE6T9JaoACpwNsS_z8QS05NONy?usp=sharing');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Impossible d'ouvrir le lien Gemini.")));
+      }
+    }
+  }
+
+  void _showChatbot(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final service = Provider.of<LandService>(context);
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF161B22) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.1), borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.auto_awesome, color: Color(0xFF00963F), size: 16),
+                    const SizedBox(width: 8),
+                    Text("ASSISTANT FONCIER AI", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ElevatedButton.icon(
+                    onPressed: _launchGemini,
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text("Expertise Gemini Avancée", style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.withOpacity(0.1),
+                      foregroundColor: Colors.blue,
+                      minimumSize: const Size(double.infinity, 40),
+                    ),
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: service.chatHistory.length,
+                    itemBuilder: (context, i) => _buildChatBubble(service.chatHistory[i]['text'], service.chatHistory[i]['isMe'], isDark),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _chatController,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: "Posez votre question...",
+                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black26),
+                            prefixIcon: Icon(Icons.chat_outlined, size: 20, color: isDark ? Colors.white24 : Colors.black26),
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+                            filled: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        icon: const Icon(Icons.send, color: Color(0xFF00963F)),
+                        onPressed: () async {
+                          if (_chatController.text.isEmpty) return;
+                          final msg = _chatController.text;
+                          _chatController.clear();
+                          await service.sendChatMessage(msg);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChatBubble(String text, bool isMe, bool isDark) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xFF00963F) : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+          borderRadius: BorderRadius.circular(20).copyWith(
+            bottomLeft: isMe ? const Radius.circular(20) : Radius.zero,
+            bottomRight: isMe ? Radius.zero : const Radius.circular(20),
+          ),
+        ),
+        child: Text(text, style: TextStyle(color: isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontSize: 13)),
+      ),
+    );
+  }
+
+  void _showCreateTicketDialog(BuildContext context, bool isDark) {
+    final subjectController = TextEditingController();
+    final descController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Ouvrir un ticket de support"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: subjectController,
+              decoration: const InputDecoration(hintText: "Sujet (ex: Erreur Cadastre)"),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(hintText: "Description du problème"),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ApiService.createTicket({
+                  'subject': subjectController.text,
+                  'description': descController.text,
+                  'priority': 'URGENT',
+                  'email': Provider.of<LandService>(context, listen: false).currentUser?.email ?? 'citoyen@foncierchain.cg'
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ticket créé avec succès")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
+            child: const Text("Envoyer"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -297,6 +465,24 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             ),
           ),
           _buildNetworkBanner(isDark),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'ticket_fab',
+            onPressed: () => _showCreateTicketDialog(context, isDark),
+            backgroundColor: Colors.orange,
+            child: const Icon(Icons.confirmation_number_outlined, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'chat_fab',
+            onPressed: () => _showChatbot(context, isDark),
+            backgroundColor: const Color(0xFF00963F),
+            child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+          ),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(navService.currentTabIndex, isDark),

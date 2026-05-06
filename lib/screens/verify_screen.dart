@@ -41,47 +41,22 @@ class _VerifyScreenState extends State<VerifyScreen> {
       _selectedParcel = null;
     });
 
-    try {
-      final mapData = await ApiService.getMapData();
-      final query = _controller.text.trim().toLowerCase();
-      
-      final List<Parcel> results = mapData.where((p) => 
-        p['parcelId'].toString().toLowerCase().contains(query) || 
-        p['owner'].toString().toLowerCase().contains(query) ||
-        p['neighborhood'].toString().toLowerCase().contains(query)
-      ).map((item) => Parcel(
-        id: item['parcelId'] ?? 'ID-MIS',
-        ownerName: item['owner'] ?? 'Inconnu',
-        ownerId: 'UID-SEARCH',
-        city: item['city'] ?? 'Brazzaville',
-        neighborhood: item['neighborhood'] ?? '',
-        address: "${item['neighborhood']}, ${item['city']}",
-        cadastralId: item['cadastralId'] ?? "CAD-${item['parcelId']}",
-        area: (item['surface'] as num?)?.toDouble() ?? 0.0,
-        price: (item['price'] as num?)?.toDouble() ?? 0.0,
-        usage: item['usage'] ?? 'NA',
-        status: item['status'] ?? 'DRAFT',
-        txId: item['hash'],
-        lastUpdate: item['timestamp'] != null ? DateTime.parse(item['timestamp']) : DateTime.now(),
-      )).toList();
+    final service = Provider.of<LandService>(context, listen: false);
+    final results = await service.searchParcels(_controller.text.trim());
 
-      setState(() {
-        _isSearching = false;
-        if (results.isEmpty) {
-          _error = "Aucun titre foncier trouvé pour cette recherche.";
-        } else {
-          _foundParcels = results;
-          if (results.length == 1) {
-            _selectedParcel = results.first;
-          }
+    setState(() {
+      _isSearching = false;
+      if (service.lastSearchError != null) {
+        _error = service.lastSearchError;
+      } else if (results.isEmpty) {
+        _error = "Aucun titre foncier trouvé pour cette recherche.";
+      } else {
+        _foundParcels = results;
+        if (results.length == 1) {
+          _selectedParcel = results.first;
         }
-      });
-    } catch (e) {
-      setState(() {
-        _isSearching = false;
-        _error = "Erreur de connexion au registre blockchain.";
-      });
-    }
+      }
+    });
   }
 
   @override
