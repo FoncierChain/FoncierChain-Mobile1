@@ -7,6 +7,10 @@ import 'screens/verify_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/agent_portal_screen.dart';
 import 'screens/help_center_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/password_setup_screen.dart';
+import 'screens/signalement_screen.dart';
 import 'services/land_service.dart';
 import 'services/api_service.dart';
 import 'widgets/neural_background.dart';
@@ -151,6 +155,12 @@ class FoncierChainApp extends StatelessWidget {
                 ),
               ),
             ),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/signalement': (context) => const SignalementScreen(),
+              '/home': (context) => const MainNavigationShell(),
+            },
             home: const SplashScreen(),
           );
         },

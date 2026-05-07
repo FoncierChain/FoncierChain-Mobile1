@@ -129,13 +129,13 @@ class _MapScreenState extends State<MapScreen> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _getStatusColor(data['status']).withOpacity(0.35),
-                    border: Border.all(color: _getStatusColor(data['status']), width: 2),
+                    color: Color(service.getLandColor(data['land_type'], data['status'])).withOpacity(0.35),
+                    border: Border.all(color: Color(service.getLandColor(data['land_type'], data['status'])), width: 2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Icon(
-                      data['status'] == "FINALIZED" ? Icons.verified : Icons.location_on,
+                      data['status'] == "FINALIZED" ? Icons.verified : (data['status'] == "LITIGE" ? Icons.warning : Icons.location_on),
                       color: Colors.white,
                       size: 18,
                     ),
@@ -146,6 +146,49 @@ class _MapScreenState extends State<MapScreen> {
           }).toList(),
         ),
       ],
+    );
+  }
+
+  void _showSignalFraudDialog(BuildContext context, Parcel parcel, bool isDark) {
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Signaler une fraude ou un litige"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Parcelle: ${parcel.id}"),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                hintText: "Raison du signalement (Corruption, Doublon, Contestation...)",
+                hintStyle: TextStyle(fontSize: 12, color: isDark ? Colors.white24 : Colors.black26),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).signalFraud(parcel.id, parcel.cadastralId, reasonController.text);
+                Navigator.pop(context);
+                _loadMapData();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Signalement enregistré. Parcelle mise sous séquestre.")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text("SIGNHALER"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -368,6 +411,8 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  _buildInfoTile(Icons.landscape, "TYPE DE TERRE", _selectedParcel!.landType, isDark),
+                  const SizedBox(height: 16),
                   _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName, isDark),
                   const SizedBox(height: 16),
                   _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.area} m²", isDark),
@@ -377,6 +422,23 @@ class _MapScreenState extends State<MapScreen> {
                   _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address, isDark),
                   const SizedBox(height: 24),
                   Divider(color: isDark ? Colors.white10 : Colors.black12),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showSignalFraudDialog(context, _selectedParcel!, isDark),
+                          icon: const Icon(Icons.report_problem, size: 18),
+                          label: const Text("SIGNALEMENT"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.withOpacity(0.1),
+                            foregroundColor: Colors.orange,
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Text("CERTIFICAT NUMÉRIQUE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
                   const SizedBox(height: 12),

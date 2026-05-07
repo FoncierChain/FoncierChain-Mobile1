@@ -148,6 +148,7 @@ class HelpCenterScreen extends StatelessWidget {
     return Column(
       children: [
         _buildFAQItem("Quel est le rôle du 'Géomètre Agréé' ?", "Le géomètre est le seul autorisé à initier un 'Draft'. Il valide les mesures techniques et l'ID cadastral avant toute soumission sur la blockchain.", isDark),
+        _buildFAQItem("Comment signaler une fraude ?", "Utilisez le bouton 'Signalement' sur l'accueil ou la carte. La parcelle passera en statut 'LITIGE' immédiatement sur la blockchain, bloquant toute transaction frauduleuse.", isDark),
         _buildFAQItem("Pourquoi une validation communautaire ?", "Pour résoudre le 'problème de l'oracle', un Représentant Communautaire doit confirmer physiquement l'occupation du terrain afin d'éviter les doubles titres.", isDark),
         _buildFAQItem("Qu'est-ce que le statut 'FINALIZED' ?", "Cela signifie que l'Agent Foncier de l'État a apposé sa signature finale (V1). Le titre est alors immuable et un NFT représentatif est minté.", isDark),
         _buildFAQItem("Comment fonctionnent les enchères ?", "Les enchères sont sécurisées par Hyperledger Fabric. Le transfert de propriété est atomique et ne se produit qu'une fois le paiement finalisé on-chain.", isDark),

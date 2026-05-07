@@ -55,6 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildMetricGrid(isDark),
                     const SizedBox(height: 32),
+                    _buildSectionHeader("SERVICES CITOYENS", isDark),
+                    const SizedBox(height: 16),
+                    _buildCitizenServices(isDark),
+                    const SizedBox(height: 32),
                     _buildSectionHeader("OPÉRATIONS RÉCENTES", isDark),
                     const SizedBox(height: 16),
                     _buildRecentActivityList(isDark),
@@ -400,6 +404,82 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildCitizenServices(bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final service = Provider.of<LandService>(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            if (service.currentUser == null)
+              _buildServiceButton(
+                "S'identifer", 
+                Icons.login, 
+                Colors.green, 
+                () => Navigator.pushNamed(context, '/login'),
+                isDark,
+              ),
+            if (service.currentUser == null) const SizedBox(width: 12),
+            _buildServiceButton(
+              "Inscription", 
+              Icons.person_add_outlined, 
+              Colors.blue, 
+              () => Navigator.pushNamed(context, '/register'),
+              isDark,
+            ),
+            const SizedBox(width: 12),
+            _buildServiceButton(
+              "Signalement", 
+              Icons.report_problem_outlined, 
+              Colors.orange, 
+              () => Navigator.pushNamed(context, '/signalement'),
+              isDark,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildServiceButton(String label, IconData icon, Color color, VoidCallback onTap, bool isDark) {
+    final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: containerColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+            ),
+            child: Column(
+              children: [
+                Icon(icon, color: color, size: 24),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

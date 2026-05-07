@@ -2,36 +2,53 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static String baseUrl = 'https://foncierchain-backend1-1.onrender.com/api/v1';
+  static String baseUrl = '/api/v1'; // Use relative for web if served on same port
   
   static void setEnvironment(bool isPro) {
     if (isPro) {
-      baseUrl = 'https://api-pro.foncierchain.cg/api/v1'; // Simulated Pro URL
+      baseUrl = 'https://api-pro.foncierchain.cg/api/v1'; 
     } else {
-      baseUrl = 'https://foncierchain-backend1-1.onrender.com/api/v1';
+      baseUrl = '/api/v1';
     }
   }
 
   static Future<Map<String, dynamic>> _handleResponse(Future<http.Response> request) async {
     try {
       final response = await request;
+      if (response.body.isEmpty) return {};
       return jsonDecode(response.body);
     } catch (e) {
       return {
         'status': 'FAILED',
-        'message': 'Problème de connexion internet ou serveur injoignable. Le système FoncierChain nécessite une connexion active pour les écritures sur la blockchain.',
+        'message': 'Problème de connexion internet ou serveur injoignable. Le système FoncierChain nécessite une connexion active.',
         'error': e.toString(),
         'is_offline': true
       };
     }
   }
 
-  // --- Auth ---
+  // --- Auth & KYC ---
   static Future<Map<String, dynamic>> login(String username, String password) async {
     return _handleResponse(http.post(
       Uri.parse('$baseUrl/auth/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> registerOwner(Map<String, dynamic> data) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/register/owner/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> submitKYC(Map<String, dynamic> data) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/kyc/submit/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
     ));
   }
 
@@ -42,10 +59,25 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-    } catch (e) {
-      print('Error fetching stats: $e');
-    }
+    } catch (e) {}
     return {};
+  }
+
+  // --- Land workflow ---
+  static Future<Map<String, dynamic>> signalFraud(Map<String, dynamic> data) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/signal/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> approveDraft(String parcelId, String action) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/approve-draft/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'parcel_id': parcelId, 'action': action}),
+    ));
   }
 
   // --- Public Registry ---

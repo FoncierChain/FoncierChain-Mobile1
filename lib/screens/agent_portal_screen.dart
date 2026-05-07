@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -474,6 +476,9 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     bool canFinalize = role == 'AGENT' || role == 'ADMIN';
     bool canMutation = role == 'AGENT' || role == 'ADMIN';
 
+    bool canReviewKYC = role == 'ADMIN' || role == 'KYC_TEAM';
+    bool canApproveDraft = role == 'ADMIN' || role == 'GEOM_TEAM';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -493,27 +498,36 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               spacing: 12,
               runSpacing: 12,
               children: [
+                if (canApproveDraft)
+                _buildActionButton(
+                  "Approuver Draft", 
+                  Icons.check_circle_outline, 
+                  Colors.blue.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showReviewDraftDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                if (canReviewKYC)
+                _buildActionButton(
+                  "Review KYC", 
+                  Icons.how_to_reg_outlined, 
+                  Colors.purple.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showActionComingSoon(context, "Review KYC interface"),
+                  width: isMobile ? double.infinity : 150,
+                ),
                 if (canInitiate)
                 _buildActionButton(
-                  "1. Initier Draft", 
+                  "Initier Draft", 
                   Icons.add_location_alt_outlined, 
                   const Color(0xFF00963F).withOpacity(0.1),
                   isDark,
                   onTap: () => _showInitiateDraftDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
-                if (canValidate)
-                _buildActionButton(
-                  "2. Validation Comm.", 
-                  Icons.how_to_reg_outlined, 
-                  const Color(0xFF00963F).withOpacity(0.1),
-                  isDark,
-                  onTap: () => _showValidateCommunityDialog(context, isDark),
-                  width: isMobile ? double.infinity : 150,
-                ),
                 if (canFinalize)
                 _buildActionButton(
-                  "3. Finalisation État", 
+                  "Finalisation État", 
                   Icons.verified_user_outlined, 
                   const Color(0xFF00963F).withOpacity(0.1),
                   isDark,
@@ -522,20 +536,11 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                 ),
                 if (canMutation)
                 _buildActionButton(
-                  "Mutation (Transfert)", 
+                  "Mutation", 
                   Icons.swap_horiz_outlined, 
                   const Color(0xFF00963F).withOpacity(0.1),
                   isDark,
                   onTap: () => _showTransferDialog(context, isDark),
-                  width: isMobile ? double.infinity : 150,
-                ),
-                if (role == 'ADMIN' || role == 'AGENT')
-                _buildActionButton(
-                  "Signaler un Litige", 
-                  Icons.report_problem_outlined, 
-                  Colors.redAccent.withOpacity(0.1),
-                  isDark,
-                  onTap: () => _showDisputeDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
               ],
@@ -543,6 +548,53 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           }
         ),
       ],
+    );
+  }
+
+  void _showActionComingSoon(BuildContext context, String action) {
+    showDialog(context: context, builder: (context) => AlertDialog(title: Text(action), content: const Text("Cette interface est réservée à l'équipe dédiée dans la version de production."), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))]));
+  }
+
+  void _showReviewDraftDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Examen de Draft"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle (ex: 23)", isDark),
+            const SizedBox(height: 12),
+            const Text("En tant qu'Équipe d'Approbation Géomètre, vous devez valider la conformité technique du levé.", style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await ApiService.approveDraft(idController.text, 'REJECT');
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Draft Rejeté. Suppression automatique après 10m.")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
+              }
+            }, 
+            child: const Text("REJETER", style: TextStyle(color: Colors.red))),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ApiService.approveDraft(idController.text, 'APPROVE');
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Draft Approuvé (IN_PROCESS). Confirmation propriétaire requise.")));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
+              }
+            }, 
+            child: const Text("APPROUVER")),
+        ],
+      ),
     );
   }
 
@@ -630,47 +682,199 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   }
 
   void _showKYCDialog(BuildContext context, bool isDark) {
-    final idController = TextEditingController();
+    Uint8List? rectoImage;
+    Uint8List? versoImage;
+    bool isAnalyzing = false;
+    String? analysisError;
+    Map<String, dynamic>? extractedData;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
-        title: const Text("Vérification d'Identité (KYC)"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Veuillez charger une copie de votre CNI ou Passeport pour accéder à toutes les fonctionnalités."),
-            const SizedBox(height: 20),
-            _buildDialogField(idController, "Numéro de Pièce d'Identité", isDark),
-            const SizedBox(height: 12),
-            Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.1), style: BorderStyle.solid),
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final service = Provider.of<LandService>(context, listen: false);
+
+          Future<void> pickImage(bool isRecto) async {
+            final result = await FilePicker.platform.pickFiles(type: FileType.image);
+            if (result != null && result.files.first.bytes != null) {
+              setDialogState(() {
+                if (isRecto) rectoImage = result.files.first.bytes;
+                else versoImage = result.files.first.bytes;
+              });
+            }
+          }
+
+          Future<void> startAnalysis() async {
+            if (rectoImage == null || versoImage == null) return;
+            setDialogState(() {
+              isAnalyzing = true;
+              analysisError = null;
+            });
+
+            final result = await service.analyzeKYCWithGemini(rectoImage!, versoImage!);
+            
+            setDialogState(() {
+              isAnalyzing = false;
+              if (result.containsKey('error')) {
+                analysisError = result['error'];
+              } else if (result['est_expire'] == true) {
+                analysisError = "La pièce d'identité est expirée (${result['date_expiration']}). Accès refusé.";
+              } else {
+                extractedData = result;
+              }
+            });
+          }
+
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+            title: const Text("Vérification d'Identité IA (KYC)"),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Importez le recto et le verso de votre pièce d'identité. Notre IA Gemini vérifiera l'authenticité et la validité.",
+                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildImageUploadBox(
+                            "RECTO", 
+                            rectoImage, 
+                            () => pickImage(true), 
+                            isDark
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildImageUploadBox(
+                            "VERSO", 
+                            versoImage, 
+                            () => pickImage(false), 
+                            isDark
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (rectoImage != null && versoImage != null && extractedData == null && !isAnalyzing) ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: startAnalysis,
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text("Analyser avec Gemini"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.withOpacity(0.1),
+                          foregroundColor: Colors.blue,
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                      ),
+                    ],
+                    if (isAnalyzing) ...[
+                      const SizedBox(height: 20),
+                      const CircularProgressIndicator(color: Color(0xFF00963F)),
+                      const SizedBox(height: 12),
+                      const Text("Extraction des données par l'IA..."),
+                    ],
+                    if (analysisError != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                        child: Text(analysisError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                      ),
+                    ],
+                    if (extractedData != null) ...[
+                      const SizedBox(height: 16),
+                      _buildExtractedRow("NOM", extractedData!['nom'], isDark),
+                      _buildExtractedRow("PRÉNOM", extractedData!['prenom'], isDark),
+                      _buildExtractedRow("N° ID", extractedData!['id_number'], isDark),
+                      _buildExtractedRow("EXPIRATION", extractedData!['date_expiration'], isDark),
+                      const SizedBox(height: 12),
+                      const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                    ],
+                  ],
+                ),
               ),
-              child: const Icon(Icons.add_a_photo_outlined, size: 32, color: Colors.grey),
             ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+              if (extractedData != null)
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await service.verifyKYC(
+                        extractedData!['id_number'], 
+                        extractedData: extractedData
+                      );
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("KYC validé avec succès par l'IA.")));
+                    } catch (e) {
+                      setDialogState(() => analysisError = "Erreur finale: $e");
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
+                  child: const Text("Confirmer & Enregistrer"),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildImageUploadBox(String label, Uint8List? image, VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: image != null ? const Color(0xFF00963F) : (isDark ? Colors.white10 : Colors.black12)),
+          image: image != null ? DecorationImage(image: MemoryImage(image), fit: BoxFit.cover) : null,
+        ),
+        child: Stack(
+          children: [
+            if (image == null)
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_a_photo_outlined, size: 24, color: Colors.grey),
+                    const SizedBox(height: 8),
+                    Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            if (image != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  child: const Icon(Icons.check, size: 12, color: Colors.white),
+                ),
+              ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Plus tard")),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final service = Provider.of<LandService>(context, listen: false);
-                await service.verifyKYC(idController.text);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("KYC Soumis le Ledger valide votre identité...")));
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00963F)),
-            child: const Text("Soumettre"),
-          ),
+      ),
+    );
+  }
+
+  Widget _buildExtractedRow(String label, String? value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38, fontWeight: FontWeight.bold)),
+          Text(value ?? "-", style: TextStyle(fontSize: 12, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
         ],
       ),
     );

@@ -136,21 +136,83 @@ const ledger = [
 const webBuildPath = path.join(__dirname, 'build', 'web');
 app.use(express.static(webBuildPath));
 
-// --- Auth Endpoints ---
-app.post('/api/v1/register/', (req: Request, res: Response) => {
-  res.status(201).json({
-    user_id: 1,
-    username: req.body.username || "user",
-    role: req.body.role || "AGENT",
-    token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
-  });
-});
-
+// --- Auth & KYC Endpoints ---
 app.post('/api/v1/auth/', (req: Request, res: Response) => {
   res.json({ 
     token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
     user: { id: 1, username: req.body.username, role: "AGENT" }
   });
+});
+
+app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
+  const { username, phone, email } = req.body;
+  res.status(201).json({
+    status: "PENDING_KYC",
+    message: "Inscription reçue. Veuillez soumettre vos pièces d'identité pour validation.",
+    email: email
+  });
+});
+
+app.post('/api/v1/kyc/submit/', (req: Request, res: Response) => {
+  const { id_number, id_recto, id_verso } = req.body;
+  // Simulate processing
+  res.status(202).json({
+    status: "IN_PROCESS",
+    message: "Analyse en cours par l'IA et l'équipe KYC.",
+    uid_assigned: "FC-" + Math.random().toString(36).substring(2, 8).toUpperCase()
+  });
+});
+
+app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
+  const { action, username, reason } = req.body;
+  res.json({
+    status: action === 'APPROVE' ? "APPROVED" : "FAILED",
+    username: username,
+    reason: reason
+  });
+});
+
+// --- Land & Fraud ---
+app.post('/api/v1/land/signal/', (req: Request, res: Response) => {
+  const { parcel_id, cadastral_id, reason } = req.body;
+  const p = parcels.find(x => x.parcelId === parcel_id || (cadastral_id && x.cadastralId === cadastral_id));
+  if (p) {
+    p.status = "LITIGE";
+    (p as any).land_type = "Litige";
+    return res.json({ status: "SUCCESS", message: "Parcelle mise sous séquestre pour litige.", parcel_id: p.parcelId });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée pour signalement." });
+});
+
+app.post('/api/v1/land/approve-draft/', (req: Request, res: Response) => {
+  const { parcel_id, action } = req.body;
+  const p = parcels.find(x => x.parcelId === parcel_id);
+  if (p) {
+    if (action === 'APPROVE') {
+      p.status = "COMMUNITY_VALIDATED";
+    } else {
+      parcels = parcels.filter(x => x.parcelId !== parcel_id); // Rejet
+    }
+    return res.json({ status: "SUCCESS", action: action });
+  }
+  res.status(404).json({ error: "Draft non trouvé." });
+});
+
+app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
+  res.json({
+    status: "SUCCESS",
+    data: {
+      "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
+      "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
+      "Dolisie": ["District 1", "District 2"],
+      "Owando": ["Quartier 1", "Quartier 2"]
+    }
+  });
+});
+
+app.patch('/api/v1/support/tickets/:ticket_id/', (req: Request, res: Response) => {
+  const { status } = req.body;
+  res.json({ status: "SUCCESS", ticket_id: req.params.ticket_id, new_status: status });
 });
 
 // --- Land Workflow ---
@@ -238,12 +300,15 @@ app.post('/api/v1/support/tickets', (req: Request, res: Response) => {
   });
 });
 
-// --- Map Data ---
+// --- Modified Map Data to include Land Type ---
+const landTypes = ["Cadastre", "Coutumier", "Réserve État", "Agricole", "Minière", "Forestière", "En Vente"];
+
 app.get('/api/v1/map/', (req: Request, res: Response) => {
-  res.json(parcels.map(p => ({
+  res.json(parcels.map((p, index) => ({
     ...p,
     address: `${p.neighborhood}, ${p.city}`,
     currentOwner: p.owner,
+    land_type: (p as any).land_type || landTypes[index % landTypes.length],
     workflowStep: p.status === "FINALIZED" ? 3 : (p.status === "COMMUNITY_VALIDATED" ? 2 : 1)
   })));
 });
@@ -255,16 +320,6 @@ app.get('/api/v1/land/:land_id/history/', (req: Request, res: Response) => {
     history: [
       { txId: "0xabc...", action: "CREATED", timestamp: new Date().toISOString(), value: { status: "DRAFT" } }
     ]
-  });
-});
-
-app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
-  res.json({
-    status: 'SUCCESS',
-    data: {
-      "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
-      "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
-    }
   });
 });
 

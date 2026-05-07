@@ -4,6 +4,8 @@ import 'package:crypto/crypto.dart';
 import 'package:latlong2/latlong.dart';
 import 'api_service.dart';
 
+import 'package:google_generative_ai/google_generative_ai.dart';
+
 enum MapLayerType { street, satellite, terrain }
 
 class ProtectedZone {
@@ -21,6 +23,7 @@ class AppUser {
   final String role;
   final String? photoURL;
   final bool isKYCVerified;
+  final Map<String, dynamic>? kycData;
 
   AppUser({
     required this.uid,
@@ -29,6 +32,7 @@ class AppUser {
     required this.role,
     this.photoURL,
     this.isKYCVerified = false,
+    this.kycData,
   });
 }
 
@@ -44,6 +48,7 @@ class Parcel {
   final String usage;
   final String address;
   final String status;
+  final String landType; // New field
   final String? signatureV1;
   final String? signatureV2;
   final String? signatureV3;
@@ -63,6 +68,7 @@ class Parcel {
     required this.usage,
     required this.address,
     required this.status,
+    required this.landType,
     this.signatureV1,
     this.signatureV2,
     this.signatureV3,
@@ -84,6 +90,7 @@ class Parcel {
       usage: data['usage'] ?? data['usage_type'] ?? '',
       address: data['address'] ?? '',
       status: data['status'] ?? 'DRAFT',
+      landType: data['land_type'] ?? 'Cadastre',
       signatureV1: data['signature_v1'],
       signatureV2: data['signature_v2'],
       signatureV3: data['signature_v3'],
@@ -212,7 +219,7 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<void> verifyKYC(String idNumber) async {
+  Future<void> verifyKYC(String idNumber, {Map<String, dynamic>? extractedData}) async {
     if (_currentUser == null) return;
     _isLoading = true;
     notifyListeners();
@@ -226,11 +233,58 @@ class LandService with ChangeNotifier {
           displayName: _currentUser!.displayName,
           role: _currentUser!.role,
           isKYCVerified: true,
+          kycData: extractedData,
         );
       }
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>> analyzeKYCWithGemini(Uint8List recto, Uint8List verso) async {
+    const apiKey = String.fromEnvironment('GEMINI_API_KEY');
+    if (apiKey.isEmpty) {
+      return {'error': "Clé API Gemini non configurée dans l'environnement."};
+    }
+
+    final model = GenerativeModel(
+      model: 'gemini-3-flash-preview',
+      apiKey: apiKey,
+    );
+
+    final prompt = """
+      Analysez ces deux images (recto et verso) d'une pièce d'identité de la République du Congo.
+      Extrayez les informations suivantes au format JSON :
+      - nom: String
+      - prenom: String
+      - id_number: String
+      - date_expiration: String (Format YYYY-MM-DD)
+      - est_expire: Boolean (Vérifiez si la date d'expiration est passée par rapport à aujourd'hui: ${DateTime.now().toIso8601String()})
+      
+      Si la pièce est expirée, 'est_expire' doit être true.
+      Répondez UNIQUEMENT avec le JSON.
+    """;
+
+    final content = [
+      Content.multi([
+        TextPart(prompt),
+        DataPart('image/jpeg', recto),
+        DataPart('image/jpeg', verso),
+      ])
+    ];
+
+    try {
+      final response = await model.generateContent(content);
+      final text = response.text;
+      if (text == null) throw Exception("Pas de réponse de Gemini");
+      
+      // Clean potential markdown code blocks
+      final cleanedText = text.replaceAll('```json', '').replaceAll('```', '').trim();
+      return jsonDecode(cleanedText);
+    } catch (e) {
+      debugPrint("Gemini KYC Error: $e");
+      return {'error': "Erreur lors de l'analyse avec Gemini: $e"};
     }
   }
   String? _pendingSearchQuery;
@@ -286,6 +340,64 @@ class LandService with ChangeNotifier {
 
   void clearPendingSearch() {
     _pendingSearchQuery = null;
+  }
+
+  final Map<String, int> _landTypeColors = {
+    'Cadastre': 0xFF009543,
+    'Coutumier': 0xFFFBDE4A,
+    'Réserve État': 0xFFDC241F,
+    'Agricole': 0xFF8B4513,
+    'Minière': 0xFF708090,
+    'Forestière': 0xFF006400,
+    'En Vente': 0xFF00BFFF,
+    'Litige': 0xFFFF4500,
+    'DRAFT': 0xFFA9A9A9,
+    'COMMUNITY_VALIDATED': 0xFFDA70D6,
+    'FINALIZED': 0xFF228B22,
+  };
+
+  int getLandColor(String? type, String? status) {
+    if (status == 'LITIGE' || status == 'EN_LITIGE') return _landTypeColors['Litige']!;
+    if (status == 'DRAFT') return _landTypeColors['DRAFT']!;
+    if (status == 'COMMUNITY_VALIDATED') return _landTypeColors['COMMUNITY_VALIDATED']!;
+    if (status == 'FINALIZED') return _landTypeColors['FINALIZED']!;
+    return _landTypeColors[type] ?? _landTypeColors['Cadastre']!;
+  }
+
+  Future<void> registerOwner(String username, String phone, String email) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.registerOwner({
+        'username': username,
+        'phone': phone,
+        'email': email,
+      });
+      if (res['status'] != 'PENDING_KYC') {
+        throw Exception(res['message'] ?? "Erreur lors de l'inscription");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> signalFraud(String? parcelId, String? cadastralId, String reason) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.signalFraud({
+        'parcel_id': parcelId,
+        'cadastral_id': cadastralId,
+        'reason': reason,
+      });
+      if (res['error'] != null) {
+        throw Exception(res['error']);
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   LandService() {
