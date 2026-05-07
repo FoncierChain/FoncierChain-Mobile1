@@ -33,6 +33,13 @@ class _MapScreenState extends State<MapScreen> {
         _mapData = data;
         _isLoading = false;
       });
+      
+      if (data.isNotEmpty) {
+        final first = data.first;
+        final lat = (first['lat'] as num).toDouble();
+        final lng = (first['lng'] as num).toDouble();
+        _mapController.move(LatLng(lat, lng), 15.0);
+      }
     }
   }
 
@@ -89,15 +96,30 @@ class _MapScreenState extends State<MapScreen> {
           subdomains: const ['a', 'b', 'c', 'd'],
         ),
         PolygonLayer(
-          polygons: protectedZones.map((z) => Polygon(
-            points: z.polygon,
-            color: Colors.red.withOpacity(0.2),
-            borderColor: Colors.red,
-            borderStrokeWidth: 2,
-            isFilled: true,
-            label: z.name,
-            labelStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-          )).toList(),
+          polygons: [
+            ...protectedZones.map((z) => Polygon(
+              points: z.polygon,
+              color: Colors.red.withOpacity(0.2),
+              borderColor: Colors.red,
+              borderStrokeWidth: 2,
+              isFilled: true,
+              label: z.name,
+              labelStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+            )),
+            ..._mapData.where((data) => data['coords'] != null).map((data) {
+              final List<dynamic> coords = data['coords'];
+              final List<LatLng> points = coords.map((c) => LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
+              final colorValue = service.getLandColor(data['land_type'], data['status']);
+              
+              return Polygon(
+                points: points,
+                color: Color(colorValue).withOpacity(0.4),
+                borderColor: Color(colorValue),
+                borderStrokeWidth: 3,
+                isFilled: true,
+              );
+            }),
+          ],
         ),
         MarkerLayer(
           markers: _mapData.map((data) {
