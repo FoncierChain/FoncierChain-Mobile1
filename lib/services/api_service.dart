@@ -30,7 +30,7 @@ class ApiService {
   // --- Auth & KYC ---
   static Future<Map<String, dynamic>> login(String username, String password) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/auth/'),
+      Uri.parse('$baseUrl/auth'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
     ));
@@ -38,7 +38,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> registerOwner(Map<String, dynamic> data) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/register/owner/'),
+      Uri.parse('$baseUrl/register/owner'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     ));
@@ -46,7 +46,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> submitKYC(Map<String, dynamic> data) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/kyc/submit/'),
+      Uri.parse('$baseUrl/kyc/submit'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     ));
@@ -55,7 +55,7 @@ class ApiService {
   // --- Dashboard Statistics ---
   static Future<Map<String, dynamic>> getStats() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/stats/'));
+      final response = await http.get(Uri.parse('$baseUrl/stats'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -66,7 +66,7 @@ class ApiService {
   // --- Land workflow ---
   static Future<Map<String, dynamic>> signalFraud(Map<String, dynamic> data) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/signal/'),
+      Uri.parse('$baseUrl/land/signal'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     ));
@@ -74,7 +74,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> approveDraft(String parcelId, String action) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/approve-draft/'),
+      Uri.parse('$baseUrl/land/approve-draft'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'parcel_id': parcelId, 'action': action}),
     ));
@@ -83,7 +83,7 @@ class ApiService {
   // --- Public Registry ---
   static Future<Map<String, dynamic>> getPublicRegistry() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/registry/public/'));
+      final response = await http.get(Uri.parse('$baseUrl/registry/public'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -96,7 +96,7 @@ class ApiService {
   // --- Land Map Data ---
   static Future<List<dynamic>> getMapData() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/map/'));
+      final response = await http.get(Uri.parse('$baseUrl/map'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -109,7 +109,7 @@ class ApiService {
   // --- land Workflow ---
   static Future<Map<String, dynamic>> createDraft(Map<String, dynamic> data) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/draft/'),
+      Uri.parse('$baseUrl/land/draft'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     ));
@@ -117,7 +117,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> validateLand(String landId, String signature) async {
     return _handleResponse(http.patch(
-      Uri.parse('$baseUrl/land/validate/'),
+      Uri.parse('$baseUrl/land/validate'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'land_id': landId, 'signature_v3': signature}),
     ));
@@ -125,7 +125,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> finalizeLand(String landId, String signature) async {
     return _handleResponse(http.patch(
-      Uri.parse('$baseUrl/land/finalize/'),
+      Uri.parse('$baseUrl/land/finalize'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'land_id': landId, 'signature_v1': signature}),
     ));
@@ -137,12 +137,12 @@ class ApiService {
 
   // --- Geo Data ---
   static Future<Map<String, dynamic>> getCongoGeoData() async {
-    return _handleResponse(http.get(Uri.parse('$baseUrl/geo/congo/')));
+    return _handleResponse(http.get(Uri.parse('$baseUrl/geo/congo')));
   }
 
   // --- Reports ---
   static Future<Map<String, dynamic>> getReports() async {
-    return _handleResponse(http.get(Uri.parse('$baseUrl/reports/')));
+    return _handleResponse(http.get(Uri.parse('$baseUrl/reports')));
   }
 
   // --- Support ---
@@ -165,7 +165,7 @@ class ApiService {
   // --- Security & KYC ---
   static Future<Map<String, dynamic>> reviewKYC(String username, String action, {String? reason}) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/kyc/review/'),
+      Uri.parse('$baseUrl/kyc/review'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'action': action, 'reason': reason}),
     ));
@@ -173,7 +173,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> verifyKYC(String entityId, String idNumber) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/kyc/submit/'),
+      Uri.parse('$baseUrl/kyc/submit'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'id_number': idNumber}),
     ));

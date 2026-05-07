@@ -122,6 +122,7 @@ class _MapScreenState extends State<MapScreen> {
                       price: (data['price'] as num?)?.toDouble() ?? 0.0,
                       usage: data['usage'] ?? 'NA',
                       status: data['status'] ?? 'DRAFT',
+                      landType: data['land_type'] ?? 'Cadastre',
                       txId: data['hash'],
                       lastUpdate: data['createdAt'] != null ? DateTime.parse(data['createdAt']) : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
                     );

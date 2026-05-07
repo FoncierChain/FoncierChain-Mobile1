@@ -137,14 +137,14 @@ const webBuildPath = path.join(__dirname, 'build', 'web');
 app.use(express.static(webBuildPath));
 
 // --- Auth & KYC Endpoints ---
-app.post('/api/v1/auth/', (req: Request, res: Response) => {
+app.post('/api/v1/auth', (req: Request, res: Response) => {
   res.json({ 
     token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
     user: { id: 1, username: req.body.username, role: "AGENT" }
   });
 });
 
-app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
+app.post('/api/v1/register/owner', (req: Request, res: Response) => {
   const { username, password, email, phone, id_recto, id_verso } = req.body;
   res.status(201).json({
     status: "SUCCESS",
@@ -153,7 +153,7 @@ app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
   });
 });
 
-app.post('/api/v1/kyc/submit/', (req: Request, res: Response) => {
+app.post('/api/v1/kyc/submit', (req: Request, res: Response) => {
   const { id_recto, id_verso, id_number } = req.body;
   res.status(200).json({
     status: "SUCCESS", 
@@ -161,7 +161,7 @@ app.post('/api/v1/kyc/submit/', (req: Request, res: Response) => {
   });
 });
 
-app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
+app.post('/api/v1/kyc/review', (req: Request, res: Response) => {
   const { action, username, reason } = req.body;
   res.json({
     status: "SUCCESS",
@@ -172,7 +172,7 @@ app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
 });
 
 // --- Land & Fraud ---
-app.post('/api/v1/land/signal/', (req: Request, res: Response) => {
+app.post('/api/v1/land/signal', (req: Request, res: Response) => {
   const { parcel_id, cadastral_id, reason } = req.body;
   const p = parcels.find(x => x.parcelId === parcel_id || (cadastral_id && x.cadastralId === cadastral_id));
   if (p) {
@@ -183,7 +183,7 @@ app.post('/api/v1/land/signal/', (req: Request, res: Response) => {
   res.status(404).json({ error: "Parcelle non trouvée pour signalement." });
 });
 
-app.post('/api/v1/land/approve-draft/', (req: Request, res: Response) => {
+app.post('/api/v1/land/approve-draft', (req: Request, res: Response) => {
   const { parcel_id, action } = req.body;
   const p = parcels.find(x => x.parcelId === parcel_id);
   if (p) {
@@ -197,7 +197,7 @@ app.post('/api/v1/land/approve-draft/', (req: Request, res: Response) => {
   res.status(404).json({ error: "Draft non trouvé." });
 });
 
-app.get('/api/v1/geo/congo/', (req: Request, res: Response) => {
+app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
   res.json({
     cities: [
       { 
@@ -213,11 +213,11 @@ app.get('/api/v1/geo/congo/', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/v1/land/validate-geometry/', (req: Request, res: Response) => {
+app.get('/api/v1/land/validate-geometry', (req: Request, res: Response) => {
   res.json({ valid: true, computed_area_m2: 250.5, overlaps: [] });
 });
 
-app.get('/api/v1/reports/', (req: Request, res: Response) => {
+app.get('/api/v1/reports', (req: Request, res: Response) => {
   res.json({
     districts: ["Brazzaville", "Pointe-Noire"],
     audit_logs: [
@@ -231,13 +231,13 @@ app.get('/api/v1/reports/', (req: Request, res: Response) => {
   });
 });
 
-app.patch('/api/v1/support/tickets/:ticket_id/', (req: Request, res: Response) => {
+app.patch('/api/v1/support/tickets/:ticket_id', (req: Request, res: Response) => {
   const { status } = req.body;
   res.json({ status: "SUCCESS", ticket_id: req.params.ticket_id, new_status: status });
 });
 
 // --- Land Workflow ---
-app.post('/api/v1/land/draft/', (req: Request, res: Response) => {
+app.post('/api/v1/land/draft', (req: Request, res: Response) => {
   const { parcelId } = req.body;
   if (parcels.find(p => p.parcelId === parcelId)) {
     return res.status(409).json({ status: "FAILED", message: "DOUBLE ATTRIBUTION REJETÉE", conflict: "parcel_id" });
@@ -247,21 +247,21 @@ app.post('/api/v1/land/draft/', (req: Request, res: Response) => {
   res.status(201).json({ status: "SUCCESS", txId: "0x" + Math.random().toString(16).slice(2), id: parcelId });
 });
 
-app.patch('/api/v1/land/validate/', (req: Request, res: Response) => {
+app.patch('/api/v1/land/validate', (req: Request, res: Response) => {
   const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) p.status = "COMMUNITY_VALIDATED";
   res.json({ status: "SUCCESS", message: "Validated successfully" });
 });
 
-app.patch('/api/v1/land/finalize/', (req: Request, res: Response) => {
+app.patch('/api/v1/land/finalize', (req: Request, res: Response) => {
   const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) p.status = "FINALIZED";
   res.json({ status: "SUCCESS", message: "Land permanently anchored" });
 });
 
-app.post('/api/v1/land/mutate/', (req: Request, res: Response) => {
+app.post('/api/v1/land/mutate', (req: Request, res: Response) => {
   const { land_id, new_owner_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) p.owner = new_owner_id;
@@ -269,7 +269,7 @@ app.post('/api/v1/land/mutate/', (req: Request, res: Response) => {
 });
 
 // --- Statistics ---
-app.get('/api/v1/stats/', (req: Request, res: Response) => {
+app.get('/api/v1/stats', (req: Request, res: Response) => {
   res.json({
     total_parcels: parcels.length + 14829,
     finalized_parcels: 9241,
@@ -285,7 +285,7 @@ app.get('/api/v1/stats/', (req: Request, res: Response) => {
 });
 
 // --- Registry & Search ---
-app.get('/api/v1/registry/public/', (req: Request, res: Response) => {
+app.get('/api/v1/registry/public', (req: Request, res: Response) => {
   res.json({
     parcels: parcels.filter(p => p.status === "FINALIZED"),
     blockchain_ledger: ledger,
