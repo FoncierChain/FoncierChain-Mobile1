@@ -145,30 +145,29 @@ app.post('/api/v1/auth/', (req: Request, res: Response) => {
 });
 
 app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
-  const { username, phone, email, id_recto, id_verso } = req.body;
+  const { username, password, email, phone, id_recto, id_verso } = req.body;
   res.status(201).json({
-    status: "PENDING",
-    message: "Inscription reçue. Votre compte est en attente de vérification KYC.",
+    status: "SUCCESS",
+    message: "Compte créé, KYC en attente.",
     email: email
   });
 });
 
 app.post('/api/v1/kyc/submit/', (req: Request, res: Response) => {
-  const { id_number, id_recto, id_verso } = req.body;
-  // Simulate processing
-  res.status(202).json({
-    status: "IN_PROCESS",
-    message: "Analyse en cours par l'IA et l'équipe KYC.",
-    uid_assigned: "FC-" + Math.random().toString(36).substring(2, 8).toUpperCase()
+  const { id_recto, id_verso, id_number } = req.body;
+  res.status(200).json({
+    status: "SUCCESS", 
+    message: "Documents soumis pour vérification."
   });
 });
 
 app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
   const { action, username, reason } = req.body;
   res.json({
-    status: action === 'APPROVE' ? "APPROVED" : "FAILED",
-    username: username,
-    reason: reason || "Vérification effectuée."
+    status: "SUCCESS",
+    new_status: action,
+    unique_id: "FC-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    reason: action === 'REJECT' ? reason : undefined
   });
 });
 
@@ -177,9 +176,9 @@ app.post('/api/v1/land/signal/', (req: Request, res: Response) => {
   const { parcel_id, cadastral_id, reason } = req.body;
   const p = parcels.find(x => x.parcelId === parcel_id || (cadastral_id && x.cadastralId === cadastral_id));
   if (p) {
-    p.status = "LITIGE";
+    p.status = "EN_LITIGE";
     (p as any).land_type = "Litige";
-    return res.json({ status: "SUCCESS", message: "Parcelle mise sous séquestre pour litige.", parcel_id: p.parcelId });
+    return res.json({ status: "SUCCESS", message: "Parcelle passée en Litige.", parcel_id: p.parcelId });
   }
   res.status(404).json({ error: "Parcelle non trouvée pour signalement." });
 });
@@ -191,31 +190,43 @@ app.post('/api/v1/land/approve-draft/', (req: Request, res: Response) => {
     if (action === 'APPROVE') {
       p.status = "COMMUNITY_VALIDATED";
     } else {
-      parcels = parcels.filter(x => x.parcelId !== parcel_id); // Rejet
+      parcels = parcels.filter(x => x.parcelId !== parcel_id);
     }
-    return res.json({ status: "SUCCESS", action: action });
+    return res.json({ status: "SUCCESS" });
   }
   res.status(404).json({ error: "Draft non trouvé." });
 });
 
 app.get('/api/v1/geo/congo/', (req: Request, res: Response) => {
   res.json({
-    status: "SUCCESS",
-    data: {
-      "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
-      "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
-      "Dolisie": ["District 1", "District 2"],
-      "Owando": ["Quartier 1", "Quartier 2"]
-    }
+    cities: [
+      { 
+        name: "Brazzaville", 
+        neighborhoods: ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"]
+      },
+      {
+        name: "Pointe-Noire",
+        neighborhoods: ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"]
+      }
+    ],
+    departments: ["Bouenza", "Cuvette", "Kouilou", "Lékoumou", "Likouala", "Niari", "Plateaux", "Pool", "Sangha"]
   });
+});
+
+app.get('/api/v1/land/validate-geometry/', (req: Request, res: Response) => {
+  res.json({ valid: true, computed_area_m2: 250.5, overlaps: [] });
 });
 
 app.get('/api/v1/reports/', (req: Request, res: Response) => {
   res.json({
-    status: "SUCCESS",
-    reports: [
-      { id: "REP-001", type: "Fraud", parcelId: "34", reporter: "Comité Local", date: "2026-05-05" },
-      { id: "REP-002", type: "Dispute", parcelId: "12", reporter: "Propriétaire Voisin", date: "2026-05-06" }
+    districts: ["Brazzaville", "Pointe-Noire"],
+    audit_logs: [
+      { id: "LOG-001", action: "Review KYC", user: "admin", date: new Date().toISOString() },
+      { id: "LOG-002", action: "Signal Fraud", user: "chef_quartier", date: new Date().toISOString() }
+    ],
+    alerts: [
+      { id: "ALT-001", type: "Fraud", parcelId: "34", reporter: "Comité Local", date: "2026-05-05", reason: "Occultation de titre" },
+      { id: "ALT-002", type: "Dispute", parcelId: "12", reporter: "Propriétaire Voisin", date: "2026-05-06", reason: "Double attribution suspectée" }
     ]
   });
 });
@@ -284,13 +295,30 @@ app.get('/api/v1/registry/public/', (req: Request, res: Response) => {
 
 app.get('/api/v1/citizen/verify', (req: Request, res: Response) => {
   const query = (req.query.land_id as string || '').toLowerCase();
-  const results = parcels.filter(p => p.parcelId.toLowerCase().includes(query));
+  const results = parcels.filter(p => p.parcelId.toLowerCase().includes(query) || p.cadastralId?.toLowerCase().includes(query));
   
   if (results.length === 0) {
     return res.status(404).json({ error: "Parcelle non trouvée" });
   }
   
-  res.json(results);
+  const mapped = results.map(p => {
+    const ownerName = p.owner || "Inconnu";
+    const maskedOwner = ownerName.length > 2 
+      ? ownerName[0] + "*".repeat(ownerName.length - 2) + ownerName[ownerName.length - 1]
+      : ownerName;
+      
+    return {
+      parcel_id: p.parcelId,
+      status: p.status,
+      owner: maskedOwner,
+      city: p.city,
+      neighborhood: p.neighborhood,
+      area: p.area,
+      cadastralId: p.cadastralId
+    };
+  });
+  
+  res.json(mapped[0]); // Documentation says it returns a single object if land_id is specific
 });
 
 // --- Support ---

@@ -206,11 +206,11 @@ class LandService with ChangeNotifier {
     try {
       final res = await ApiService.getCongoGeoData();
       _isOffline = res['is_offline'] == true;
-      if (res['status'] == 'SUCCESS' && res['data'] != null) {
+      if (res['cities'] != null) {
         Map<String, List<String>> newData = {};
-        (res['data'] as Map).forEach((key, value) {
-          newData[key.toString()] = List<String>.from(value);
-        });
+        for (var cityGroup in res['cities']) {
+          newData[cityGroup['name'].toString()] = List<String>.from(cityGroup['neighborhoods']);
+        }
         _congoGeoData = newData;
         notifyListeners();
       }
@@ -368,6 +368,7 @@ class LandService with ChangeNotifier {
     required String username,
     required String phone,
     required String email,
+    required String password,
     required String? idRecto,
     required String? idVerso,
   }) async {
@@ -378,6 +379,7 @@ class LandService with ChangeNotifier {
         'username': username,
         'phone': phone,
         'email': email,
+        'password': password,
         'id_recto': idRecto,
         'id_verso': idVerso,
       });
@@ -605,8 +607,8 @@ class LandService with ChangeNotifier {
   Future<List<Map<String, dynamic>>> getReports() async {
     try {
       final res = await ApiService.getReports();
-      if (res['status'] == 'SUCCESS' && res['reports'] != null) {
-        return List<Map<String, dynamic>>.from(res['reports']);
+      if (res['alerts'] != null) {
+        return List<Map<String, dynamic>>.from(res['alerts']);
       }
     } catch (e) {
       debugPrint("Reports error: $e");

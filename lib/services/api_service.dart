@@ -173,9 +173,9 @@ class ApiService {
 
   static Future<Map<String, dynamic>> verifyKYC(String entityId, String idNumber) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/kyc'),
+      Uri.parse('$baseUrl/kyc/submit/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'entity_id': entityId, 'id_number': idNumber}),
+      body: jsonEncode({'id_number': idNumber}),
     ));
   }
 

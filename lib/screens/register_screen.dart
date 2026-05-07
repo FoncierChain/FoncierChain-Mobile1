@@ -17,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
   Uint8List? _idRecto;
   Uint8List? _idVerso;
   bool _isLoading = false;
@@ -32,7 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleRegister() async {
-    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _phoneController.text.isEmpty) {
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _phoneController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Veuillez remplir tous les champs")));
       return;
     }
@@ -49,6 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         username: _nameController.text, 
         phone: _phoneController.text, 
         email: _emailController.text,
+        password: _passwordController.text,
         idRecto: base64Encode(_idRecto!),
         idVerso: base64Encode(_idVerso!),
       );
@@ -128,6 +130,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               decoration: const InputDecoration(
                 labelText: "Numéro de Téléphone (+242)",
                 prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: "Mot de passe",
+                prefixIcon: Icon(Icons.lock_outline),
               ),
             ),
             const SizedBox(height: 24),
