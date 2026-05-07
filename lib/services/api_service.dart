@@ -137,7 +137,12 @@ class ApiService {
 
   // --- Geo Data ---
   static Future<Map<String, dynamic>> getCongoGeoData() async {
-    return _handleResponse(http.get(Uri.parse('$baseUrl/geo/congo')));
+    return _handleResponse(http.get(Uri.parse('$baseUrl/geo/congo/')));
+  }
+
+  // --- Reports ---
+  static Future<Map<String, dynamic>> getReports() async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/reports/')));
   }
 
   // --- Support ---
@@ -158,6 +163,14 @@ class ApiService {
   }
 
   // --- Security & KYC ---
+  static Future<Map<String, dynamic>> reviewKYC(String username, String action, {String? reason}) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/kyc/review/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'action': action, 'reason': reason}),
+    ));
+  }
+
   static Future<Map<String, dynamic>> verifyKYC(String entityId, String idNumber) async {
     return _handleResponse(http.post(
       Uri.parse('$baseUrl/land/kyc'),

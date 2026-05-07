@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/land_service.dart';
 
@@ -14,7 +17,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  Uint8List? _idRecto;
+  Uint8List? _idVerso;
   bool _isLoading = false;
+
+  Future<void> _pickImage(bool isRecto) async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.first.bytes != null) {
+      setState(() {
+        if (isRecto) _idRecto = result.files.first.bytes;
+        else _idVerso = result.files.first.bytes;
+      });
+    }
+  }
 
   void _handleRegister() async {
     if (_nameController.text.isEmpty || _emailController.text.isEmpty || _phoneController.text.isEmpty) {
@@ -22,10 +37,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (_idRecto == null || _idVerso == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Veuillez importer les photos de votre pièce d'identité")));
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final service = Provider.of<LandService>(context, listen: false);
-      await service.registerOwner(_nameController.text, _phoneController.text, _emailController.text);
+      await service.registerOwner(
+        username: _nameController.text, 
+        phone: _phoneController.text, 
+        email: _emailController.text,
+        idRecto: base64Encode(_idRecto!),
+        idVerso: base64Encode(_idVerso!),
+      );
       if (mounted) {
         showDialog(
           context: context,
@@ -104,6 +130,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 prefixIcon: Icon(Icons.phone_outlined),
               ),
             ),
+            const SizedBox(height: 24),
+            Text(
+              "PIÈCE D'IDENTITÉ (CNI / PASSEPORT)",
+              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? Colors.white38 : Colors.black38),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildIdPicker("RECTO", _idRecto, () => _pickImage(true), isDark)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildIdPicker("VERSO", _idVerso, () => _pickImage(false), isDark)),
+              ],
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -124,6 +163,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildIdPicker(String label, Uint8List? image, VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: image != null ? const Color(0xFF009543) : (isDark ? Colors.white10 : Colors.black12)),
+          image: image != null ? DecorationImage(image: MemoryImage(image), fit: BoxFit.cover) : null,
+        ),
+        child: image == null ? Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add_a_photo_outlined, size: 24, color: Colors.grey),
+              const SizedBox(height: 4),
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ) : null,
       ),
     );
   }

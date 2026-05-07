@@ -199,6 +199,8 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             const SizedBox(height: 40),
             _buildActionSection(isDark),
             const SizedBox(height: 40),
+            _buildReportsSection(isDark),
+            const SizedBox(height: 40),
             _buildConsensusMonitor(isDark),
             const SizedBox(height: 40),
             _buildRecentOpsSection(isDark),
@@ -222,6 +224,51 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   }
 
   final TextEditingController _chatController = TextEditingController();
+
+  Widget _buildReportsSection(bool isDark) {
+    final service = Provider.of<LandService>(context, listen: false);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("SIGNALEMENTS DE FRAUDE RÉCENTS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        const SizedBox(height: 16),
+        FutureBuilder<List<Map<String, dynamic>>>(
+          future: service.getReports(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            final reports = snapshot.data!;
+            if (reports.isEmpty) return const Text("Aucun signalement actif.");
+            
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161B22) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: reports.length,
+                separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
+                itemBuilder: (context, index) {
+                  final report = reports[index];
+                  return ListTile(
+                    leading: const Icon(Icons.report_problem, color: Colors.redAccent),
+                    title: Text("ID: ${report['id']} - Parcelle ${report['parcelId']}", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text("Rapporté par: ${report['reporter']} le ${report['date']}", style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 11)),
+                    trailing: TextButton(
+                      onPressed: () {},
+                      child: const Text("DÉTAILS", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _buildConsensusMonitor(bool isDark) {
     return Column(
@@ -513,7 +560,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                   Icons.how_to_reg_outlined, 
                   Colors.purple.withOpacity(0.1),
                   isDark,
-                  onTap: () => _showActionComingSoon(context, "Review KYC interface"),
+                  onTap: () => _showReviewKYCDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
                 if (canInitiate)
@@ -553,6 +600,57 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
 
   void _showActionComingSoon(BuildContext context, String action) {
     showDialog(context: context, builder: (context) => AlertDialog(title: Text(action), content: const Text("Cette interface est réservée à l'équipe dédiée dans la version de production."), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))]));
+  }
+
+  void _showReviewKYCDialog(BuildContext context, bool isDark) {
+    final usernameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Examen KYC"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Entrez le nom d'utilisateur à valider ou rejeter.", style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
+            _buildDialogField(usernameController, "Nom d'utilisateur (ex: mpassi)", isDark),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await ApiService.reviewKYC(usernameController.text, 'REJECT');
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("KYC Rejeté.")));
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
+                }
+              }
+            }, 
+            child: const Text("REJETER", style: TextStyle(color: Colors.red))),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ApiService.reviewKYC(usernameController.text, 'APPROVE');
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("KYC Approuvé. UID activé.")));
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
+                }
+              }
+            }, 
+            child: const Text("APPROUVER")),
+        ],
+      ),
+    );
   }
 
   void _showReviewDraftDialog(BuildContext context, bool isDark) {

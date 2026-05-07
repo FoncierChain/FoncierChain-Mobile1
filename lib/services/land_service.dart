@@ -364,7 +364,13 @@ class LandService with ChangeNotifier {
     return _landTypeColors[type] ?? _landTypeColors['Cadastre']!;
   }
 
-  Future<void> registerOwner(String username, String phone, String email) async {
+  Future<void> registerOwner({
+    required String username,
+    required String phone,
+    required String email,
+    required String? idRecto,
+    required String? idVerso,
+  }) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -372,8 +378,10 @@ class LandService with ChangeNotifier {
         'username': username,
         'phone': phone,
         'email': email,
+        'id_recto': idRecto,
+        'id_verso': idVerso,
       });
-      if (res['status'] != 'PENDING_KYC') {
+      if (res['status'] != 'PENDING') {
         throw Exception(res['message'] ?? "Erreur lors de l'inscription");
       }
     } finally {
@@ -592,5 +600,17 @@ class LandService with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getReports() async {
+    try {
+      final res = await ApiService.getReports();
+      if (res['status'] == 'SUCCESS' && res['reports'] != null) {
+        return List<Map<String, dynamic>>.from(res['reports']);
+      }
+    } catch (e) {
+      debugPrint("Reports error: $e");
+    }
+    return [];
   }
 }

@@ -145,10 +145,10 @@ app.post('/api/v1/auth/', (req: Request, res: Response) => {
 });
 
 app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
-  const { username, phone, email } = req.body;
+  const { username, phone, email, id_recto, id_verso } = req.body;
   res.status(201).json({
-    status: "PENDING_KYC",
-    message: "Inscription reçue. Veuillez soumettre vos pièces d'identité pour validation.",
+    status: "PENDING",
+    message: "Inscription reçue. Votre compte est en attente de vérification KYC.",
     email: email
   });
 });
@@ -168,7 +168,7 @@ app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
   res.json({
     status: action === 'APPROVE' ? "APPROVED" : "FAILED",
     username: username,
-    reason: reason
+    reason: reason || "Vérification effectuée."
   });
 });
 
@@ -198,7 +198,7 @@ app.post('/api/v1/land/approve-draft/', (req: Request, res: Response) => {
   res.status(404).json({ error: "Draft non trouvé." });
 });
 
-app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
+app.get('/api/v1/geo/congo/', (req: Request, res: Response) => {
   res.json({
     status: "SUCCESS",
     data: {
@@ -207,6 +207,16 @@ app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
       "Dolisie": ["District 1", "District 2"],
       "Owando": ["Quartier 1", "Quartier 2"]
     }
+  });
+});
+
+app.get('/api/v1/reports/', (req: Request, res: Response) => {
+  res.json({
+    status: "SUCCESS",
+    reports: [
+      { id: "REP-001", type: "Fraud", parcelId: "34", reporter: "Comité Local", date: "2026-05-05" },
+      { id: "REP-002", type: "Dispute", parcelId: "12", reporter: "Propriétaire Voisin", date: "2026-05-06" }
+    ]
   });
 });
 
