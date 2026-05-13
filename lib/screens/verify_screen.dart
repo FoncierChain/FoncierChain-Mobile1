@@ -238,11 +238,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
             ),
           ),
         Container(
-          padding: const EdgeInsets.all(24),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF161B22) : Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.green.withOpacity(isDark ? 0.2 : 0.4)),
+            border: Border.all(color: parcel.status == 'FINALIZED' ? const Color(0xFF00963F).withOpacity(0.5) : Colors.green.withOpacity(isDark ? 0.2 : 0.4)),
             boxShadow: [
               if (!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8)),
             ],
@@ -250,60 +250,297 @@ class _VerifyScreenState extends State<VerifyScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildDetailLabel("TITRE FONCIER", parcel.id, isDark, isBig: true),
-                  _buildStatusBadge(parcel.status),
-                ],
-              ),
+              if (parcel.status == 'FINALIZED') _buildNFTBadge(isDark),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: isDark ? Colors.white10 : Colors.black12),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildDetailLabel("TITRE FONCIER", parcel.id, isDark, isBig: true),
+                        _buildStatusBadge(parcel.status),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Divider(color: isDark ? Colors.white10 : Colors.black12),
+                    ),
+                    _buildDetailRow([
+                      _buildDetailLabel("PROPRIÉTAIRE", parcel.ownerName, isDark),
+                      _buildDetailLabel("QUARTIER", parcel.neighborhood, isDark),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildDetailRow([
+                      _buildDetailLabel("CADASTRE", parcel.cadastralId, isDark),
+                      _buildDetailLabel("SUPERFICIE", "${parcel.area} m²", isDark),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildDetailLabel("ADRESSE", parcel.address, isDark),
+                    const SizedBox(height: 32),
+                    _buildTrustStack(parcel, isDark),
+                    
+                    if (parcel.status == 'FINALIZED') ...[
+                      const SizedBox(height: 32),
+                      _buildAtomicSettlementView(parcel, isDark),
+                    ],
+
+                    if (parcel.txId != null) ...[
+                      const SizedBox(height: 32),
+                      _buildHashDisplay("HASH DE TRANSACTION HIERARCHIQUE (MSP)", parcel.txId!, isDark),
+                    ],
+                    
+                    if (parcel.geometricHash != null) ...[
+                      const SizedBox(height: 16),
+                      _buildHashDisplay("HASH GÉOMÉTRIQUE (ORACLE SIG)", parcel.geometricHash!, isDark),
+                    ],
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Divider(color: isDark ? Colors.white10 : Colors.black12),
+                    ),
+                    Text("HISTORIQUE DES MUTATIONS (BLOCKCHAIN LEDGER)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38, letterSpacing: 1)),
+                    const SizedBox(height: 20),
+                    FutureBuilder<List<TransactionHistory>>(
+                      future: Provider.of<LandService>(context, listen: false).getHistory(parcel.id),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: LinearProgressIndicator(color: Color(0xFF00963F)));
+                        }
+                        final history = snapshot.data ?? [];
+                        if (history.isEmpty) {
+                          return Text("Génération du bloc zéro (Genèse) réussie.", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 12, fontStyle: FontStyle.italic));
+                        }
+                        return Column(
+                          children: history.map((h) => _buildHistoryRow(h, isDark)).toList(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-              _buildDetailRow([
-                _buildDetailLabel("PROPRIÉTAIRE", parcel.ownerName, isDark),
-                _buildDetailLabel("QUARTIER", parcel.neighborhood, isDark),
-              ]),
-              const SizedBox(height: 24),
-              _buildDetailRow([
-                _buildDetailLabel("CADASTRE", parcel.cadastralId, isDark),
-                _buildDetailLabel("SUPERFICIE", "${parcel.area} m²", isDark),
-              ]),
-              const SizedBox(height: 24),
-              _buildDetailLabel("ADRESSE", parcel.address, isDark),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: isDark ? Colors.white10 : Colors.black12),
-              ),
-              Text("LOGIQUE DE CONFIANCE (DÉPÔT SÉQUESTRE + 5 PHASES)", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              _buildValidationStep("1. Provision / Séquestre (Escrow)", parcel.escrowAmount != null && parcel.escrowAmount! > 0, parcel.escrowOpenedAt != null ? "Fonds bloqués le ${parcel.escrowOpenedAt!.substring(0, 10)}" : null, isDark),
-              _buildValidationStep("2. Avis Local (Chef de Quartier)", parcel.localAdvice != null, parcel.localAdvice, isDark),
-              _buildValidationStep("3. Vacance Numérique (30 Jours)", parcel.status == 'FINALIZED' || parcel.status == 'NOTARY_VALIDATED', "Période légale de contestation", isDark),
-              _buildValidationStep("4. Validation Authentique (Notaire)", parcel.notarySignature != null, parcel.notarySignature, isDark),
-              _buildValidationStep("5. Titre NFT (Ministère / Conservation)", parcel.ministrySignature != null, parcel.ministrySignature, isDark),
-              if (parcel.status == 'FROZEN_OPPOSITION') ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withOpacity(0.3))),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNFTBadge(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFF00963F), const Color(0xFF006400)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.verified, color: Colors.white, size: 16),
+            SizedBox(width: 8),
+            Text(
+              "TITRE FONCIER NUMÉRIQUE AUTHENTIFIÉ PAR L'ÉTAT",
+              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHashDisplay(String label, String hash, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.black : Colors.grey[100])?.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: isDark ? null : Border.all(color: Colors.black12),
+          ),
+          child: SelectableText(
+            hash,
+            style: GoogleFonts.jetBrainsMono(color: const Color(0xFF00963F), fontSize: 10),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAtomicSettlementView(Parcel parcel, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF00963F).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF00963F).withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.layers_outlined, color: Color(0xFF00963F), size: 20),
+              const SizedBox(width: 12),
+              Text("TRANSFERT ATOMIQUE RÉUSSI", style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 12, color: const Color(0xFF00963F))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSettlementRow("Transfert NFT vers Buyer", "VÉRIFIÉ", isDark),
+          _buildSettlementRow("Dispersion Fees (Notaire/SIG)", "PAYÉ", isDark),
+          _buildSettlementRow("Reversement Taxes Trésor", "ENCAISSÉ", isDark),
+          _buildSettlementRow("Paiement Net Vendeur", "TRANSFÉRÉ", isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettlementRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 11)),
+          Text(value, style: const TextStyle(color: Color(0xFF00963F), fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrustStack(Parcel parcel, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader("LOGIQUE DE CONFIANCE IBOVI 2026 (5 PHASES)", isDark),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0xFF00963F).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: const Text("SMART CONTRACT ACTIF", style: TextStyle(color: Color(0xFF00963F), fontSize: 8, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _buildWorkflowPhase(
+          "Phase 1: Provision & Séquestre", 
+          parcel.escrowAmount != null && parcel.escrowAmount! > 0 ? "Prix Net + Taxes sécurisés dans l'Escrow" : "En attente du dépôt acheteur pour blocage des fonds.", 
+          parcel.escrowAmount != null && parcel.escrowAmount! > 0, 
+          isDark,
+          subValue: parcel.escrowAmount != null ? "Montant: ${parcel.escrowAmount?.toStringAsFixed(0)} FCFA" : "Provision estimée payée par Smart Contract"
+        ),
+        _buildWorkflowPhase(
+          "Phase 2: Enquête de Terrain", 
+          parcel.localAdvice != null ? "Vérification coutumière PASS (Chef de Quartier & Mairie)" : "Avis Local par défaut (Fail-safe actif sous 10j)", 
+          parcel.localAdvice != null, 
+          isDark,
+          subValue: parcel.localAdviceAt != null ? "Signature: 0x${parcel.id.hashCode.toRadixString(16).toUpperCase()}" : null
+        ),
+        _buildWorkflowPhase(
+          "Phase 3: Vacance Numérique", 
+          parcel.status == 'FINALIZED' || parcel.status == 'FINAL_SETTLEMENT' || parcel.notarySignature != null ? "Opposition purgée (30 jours de transparence blockchain)" : "Publication en cours sur le Journal Officiel Numérique.", 
+          parcel.status == 'FINALIZED' || parcel.status == 'FINAL_SETTLEMENT' || parcel.notarySignature != null, 
+          isDark
+        ),
+        _buildWorkflowPhase(
+          "Phase 4: Expertise SIG & Notariat", 
+          parcel.notarySignature != null ? "Audit Géométrique validé par Oracle ArcGIS" : "Génération du Hash Géométrique unique en cours...", 
+          parcel.notarySignature != null, 
+          isDark,
+          subValue: parcel.geometricHash != null ? "GeometricHash: ${parcel.geometricHash}" : null
+        ),
+        _buildWorkflowPhase(
+          "Phase 5: Clôture Atomique", 
+          parcel.status == 'FINALIZED' ? " NFT Titre émis & Fonds ventilés simultanément" : "Finalisation des signatures ministérielles (MSP)", 
+          parcel.status == 'FINALIZED', 
+          isDark
+        ),
+        if (parcel.status == 'FROZEN_OPPOSITION') ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.gavel, color: Colors.orange, size: 24),
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.gavel, color: Colors.orange, size: 16),
-                          SizedBox(width: 8),
-                          Text("OPPOSITION EN COURS", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 11)),
-                        ],
-                      ),
+                      const Text("OPPOSITION CITOYENNE DÉTECTÉE", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(height: 4),
-                      Text("Motif: ${parcel.oppositionReason ?? 'Non spécifié'}", style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                      Text("La transaction est gelée par le Smart Contract. Cause: ${parcel.oppositionReason ?? 'Preuve de propriété supérieure.'}", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 11)),
                     ],
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildWorkflowPhase(String title, String desc, bool isDone, bool isDark, {String? subValue}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPhaseIndicator(isDone),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(desc, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
+                if (subValue != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(subValue, style: const TextStyle(color: Color(0xFF00963F), fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhaseIndicator(bool isDone) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: isDone ? const Color(0xFF00963F) : Colors.transparent,
+        border: Border.all(color: isDone ? const Color(0xFF00963F) : Colors.grey.withOpacity(0.3), width: 2),
+        shape: BoxShape.circle,
+      ),
+      child: isDone ? const Icon(Icons.check, color: Colors.white, size: 14) : null,
+    );
+  }
+
+  Widget _buildSectionHeader(String title, bool isDark) {
+    return Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.2, color: isDark ? Colors.white24 : Colors.black26));
+  }
               if (parcel.txId != null) ...[
                 const SizedBox(height: 24),
                 Text("HASH DE TRANSACTION", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),

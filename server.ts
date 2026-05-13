@@ -207,6 +207,29 @@ app.post('/api/v1/land/signal', (req: Request, res: Response) => {
 
 // --- NEW IBIVI / FANCIERCHAIN 2026 WORKFLOW ENDPOINTS ---
 
+app.post('/api/v1/land/escrow/prepare', (req: Request, res: Response) => {
+  const { land_id } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    // Calculate total: Price + Provisions (Estimates)
+    const price = (p as any).price || 5000000;
+    const taxes = price * 0.12; 
+    const notaryFees = price * 0.05;
+    const surveyorFees = 250000;
+    
+    return res.json({ 
+      status: "SUCCESS", 
+      details: {
+        net_price: price,
+        estimated_provision: taxes + notaryFees + surveyorFees,
+        total_escrow_required: price + taxes + notaryFees + surveyorFees,
+        currency: "FCFA"
+      }
+    });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
 app.post('/api/v1/land/escrow/open', (req: Request, res: Response) => {
   const { land_id, amount } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
@@ -214,13 +237,33 @@ app.post('/api/v1/land/escrow/open', (req: Request, res: Response) => {
     p.status = "ESCROW_OPENED";
     (p as any).escrow_amount = amount;
     (p as any).escrow_opened_at = new Date().toISOString();
+    // Trigger notification to Chef de Quartier
+    (p as any).chef_notified_at = new Date().toISOString();
+    
     return res.json({ 
       status: "SUCCESS", 
-      message: "Séquestre ouvert. Fonds bloqués sur la Blockchain.",
+      message: "Séquestre ouvert. Fonds bloqués sur la Blockchain. Chef de Quartier notifié (SLA: 10j).",
       escrow_id: "ESC-" + Math.random().toString(36).substring(2, 8).toUpperCase()
     });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.get('/api/v1/land/check-timeout', (req: Request, res: Response) => {
+  // Simulate checking for inactivity in Phase 2
+  const pending = parcels.filter(p => (p as any).status === "AWAITING_LOCAL_ADVICE" || p.status === "ESCROW_OPENED");
+  const alerts = pending.map(p => {
+    const notifiedAt = new Date((p as any).chef_notified_at || p.createdAt).getTime();
+    const now = new Date().getTime();
+    const daysElapsed = (now - notifiedAt) / (1000 * 60 * 60 * 24);
+    
+    if (daysElapsed > 10) {
+      return { parcel_id: p.parcelId, status: "TIMEOUT_ALERT", location: p.neighborhood, action_required: "MAIRIE_VALIDATION_FORCEE" };
+    }
+    return null;
+  }).filter(x => x !== null);
+  
+  res.json({ alerts });
 });
 
 app.post('/api/v1/land/oppose', (req: Request, res: Response) => {
@@ -230,7 +273,8 @@ app.post('/api/v1/land/oppose', (req: Request, res: Response) => {
     p.status = "FROZEN_OPPOSITION";
     (p as any).opposition_reason = reason;
     (p as any).opposition_proof = proof_hash;
-    return res.json({ status: "SUCCESS", message: "Opposition enregistrée. Vente gelée pour arbitrage." });
+    (p as any).frozen_at = new Date().toISOString();
+    return res.json({ status: "SUCCESS", message: "Opposition enregistrée. Vente gelée par Smart Contract." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
@@ -240,12 +284,64 @@ app.get('/api/v1/land/performance-audit', (req: Request, res: Response) => {
     avg_response_time_days: {
       chef_quartier: 4.2,
       mairie: 7.5,
-      cadastre: 3.1
+      cadastre: 3.1,
+      notaire: 1.2
     },
     efficiency_score: 94.5,
-    bottlenecks: ["Mairie de Talangaï", "Cadastre Pointe-Noire Zone B"],
+    bottlenecks: [
+      { location: "Mairie de Talangaï", delay_avg: "+5.2j", reason: "Surcharge de validation (Inertie détectée)" },
+      { location: "Cadastre Pointe-Noire Zone B", delay_avg: "+3.1j", reason: "Audit SIG ARCgis en cours" }
+    ],
     total_escrows_active: 142
   });
+});
+
+app.get('/api/v1/land/validate-geometry', (req: Request, res: Response) => {
+  // ArcGIS Oracle Mock
+  const { coords } = req.query;
+  res.json({ 
+    valid: true, 
+    computed_area_m2: 250.5, 
+    overlaps: [], 
+    topology_status: "VERIFIED_BY_ARCGIS",
+    geo_hash: "GH-" + Math.random().toString(36).substring(2, 10).toUpperCase()
+  });
+});
+
+app.post('/api/v1/land/finalize-fees', (req: Request, res: Response) => {
+  const { land_id, actual_fees } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    (p as any).final_fees = actual_fees;
+    const provision = (p as any).escrow_amount - (p as any).price;
+    const diff = provision - actual_fees;
+    
+    return res.json({ 
+      status: "SUCCESS", 
+      message: "Frais verrouillés.",
+      adjustment: diff > 0 ? `Remboursement de ${diff} FCFA à l'acheteur` : `Complément de ${Math.abs(diff)} FCFA requis`
+    });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/atomic-transfer', (req: Request, res: Response) => {
+  const { land_id } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p && p.status === "NOTARY_VALIDATED") {
+    p.status = "FINALIZED";
+    // Simultaneous actions
+    const txId = "0x" + Math.random().toString(16).slice(2);
+    (p as any).atomic_tx_id = txId;
+    (p as any).settlement = {
+      vendeur: "Prix Net viré",
+      notaire: "Honoraires reversés",
+      etat: "Taxes reversées au Trésor",
+      acheteur: "NFT Titre émis"
+    };
+    return res.json({ status: "SUCCESS", message: "Transfert Atomique exécuté.", txId });
+  }
+  res.status(400).json({ error: "Conditions de clôture non remplies." });
 });
 
 app.post('/api/v1/land/local-advice', (req: Request, res: Response) => {
@@ -253,12 +349,13 @@ app.post('/api/v1/land/local-advice', (req: Request, res: Response) => {
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
     if (action === 'APPROVE') {
-      p.status = "PENDING_OPPOSITION"; // Move to public opposition phase
+      p.status = "PENDING_OPPOSITION"; // Move to public opposition phase (30 days)
       (p as any).local_advice_at = new Date().toISOString();
+      (p as any).opposition_deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     } else {
       p.status = "EN_LITIGE";
     }
-    return res.json({ status: "SUCCESS", message: "Avis local enregistré. Début de la période de vacance (30j)." });
+    return res.json({ status: "SUCCESS", message: "Avis local enregistré. Début de la période de vacance numérique (30j)." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
@@ -269,7 +366,7 @@ app.post('/api/v1/land/notary-validate', (req: Request, res: Response) => {
   if (p) {
     p.status = "NOTARY_VALIDATED";
     (p as any).notary_signature = signature;
-    return res.json({ status: "SUCCESS", message: "Validation notaire effectuée." });
+    return res.json({ status: "SUCCESS", message: "Conformité juridique validée. Dossier prêt pour signature ministérielle." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
@@ -278,21 +375,21 @@ app.post('/api/v1/land/ministry-approve', (req: Request, res: Response) => {
   const { land_id, signature } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
+    // This triggers the atomic transfer if everything is ready
     p.status = "FINALIZED";
     (p as any).ministry_signature = signature;
     p.workflowStep = 3;
-    return res.json({ status: "SUCCESS", message: "Approbation ministérielle finale. NFT généré.", txId: "0x" + Math.random().toString(16).slice(2) });
-  }
-  res.status(404).json({ error: "Parcelle non trouvée." });
-});
-
-app.post('/api/v1/land/heritage-notify', (req: Request, res: Response) => {
-  const { land_id, death_cert_id } = req.body;
-  const p = parcels.find(x => x.parcelId === land_id);
-  if (p) {
-    p.status = "BLOCKED_FOR_HERITAGE";
-    (p as any).death_cert_id = death_cert_id;
-    return res.json({ status: "SUCCESS", message: "Parcelle bloquée pour succession." });
+    const txId = "0x" + Math.random().toString(16).slice(2);
+    return res.json({ 
+      status: "SUCCESS", 
+      message: "Approbation ministérielle finale. Transfert Atomique Réussi.", 
+      txId,
+      settlement: {
+        vendor_paid: true,
+        nft_minted: true,
+        tax_collected: true
+      }
+    });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
@@ -493,7 +590,7 @@ app.get('/api/v1/land/:land_id/history/', (req: Request, res: Response) => {
 });
 
 // Fallback to index.html for SPA routing
-app.get('*', (req: Request, res: Response) => {
+app.get('*any', (req: Request, res: Response) => {
   res.sendFile(path.join(webBuildPath, 'index.html'));
 });
 

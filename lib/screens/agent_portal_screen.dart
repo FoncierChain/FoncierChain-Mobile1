@@ -201,6 +201,8 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             const SizedBox(height: 40),
             _buildPerformanceAudit(isDark),
             const SizedBox(height: 40),
+            _buildGovernanceMonitor(isDark),
+            const SizedBox(height: 40),
             _buildGISCenter(isDark),
             const SizedBox(height: 40),
             _buildReportsSection(isDark),
@@ -227,11 +229,80 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
+  Widget _buildGovernanceMonitor(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("HIÉRARCHIE D'ACCÈS MSP (HYPERLEDGER FABRIC)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          ),
+          child: Column(
+            children: [
+              _buildMSPRow("Ministère du Foncier", "ADMIN_SUPRÊME", "Accès Signature Finale", Colors.amber, isDark),
+              _buildMSPRow("Direction Générale Cadastre", "VALIDATEUR_SIG", "Validation Géo-Hash", Colors.blue, isDark),
+              _buildMSPRow("Ordre des Notaires", "OFFICIER_CONF", "Vérif Identity/Funds", Colors.purple, isDark),
+              _buildMSPRow("Réseau Géomètres (MSP)", "DATA_PROPOSER", "Injection Levés SIG", const Color(0xFF00963F), isDark),
+              const Divider(height: 32),
+              Row(
+                children: [
+                  const Icon(Icons.hub, color: Colors.blueAccent, size: 16),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Le protocole MSP garantit qu'aucune validation ne peut être injectée sans l'identité numérique certifiée du porteur du rôle.",
+                      style: TextStyle(color: Colors.blueAccent, fontSize: 10, fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMSPRow(String org, String role, String access, Color color, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(Icons.security, color: color, size: 14),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(org, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(access, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+            child: Text(role, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPerformanceAudit(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("AUDIT DE PERFORMANCE ADMINISTRATIVE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        Text("AUDIT DE PERFORMANCE ADMINISTRATIVE (GOUVERNANCE)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
         const SizedBox(height: 16),
         FutureBuilder<Map<String, dynamic>>(
           future: ApiService.getPerformanceAudit(),
@@ -253,11 +324,46 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                       _buildAuditMetric("CHEF Q.", "${data['avg_response_time_days']?['chef_quartier']}j", isDark),
                       _buildAuditMetric("MAIRIE", "${data['avg_response_time_days']?['mairie']}j", isDark),
                       _buildAuditMetric("CADASTRE", "${data['avg_response_time_days']?['cadastre']}j", isDark),
+                      _buildAuditMetric("NOTAIRE", "1.2j", isDark),
                     ],
                   ),
                   const Divider(height: 32),
-                  _buildAuditRow("Score d'Efficacité", "${data['efficiency_score']}%", Colors.green, isDark),
-                  _buildAuditRow("Séquestres Actifs", "${data['total_escrows_active']}", Colors.blue, isDark),
+                  _buildAuditRow("Score d'Efficacité Nationale", "${data['efficiency_score']}%", Colors.green, isDark),
+                  _buildAuditRow("Volume Transactionnel", "${data['total_escrows_active']}", Colors.blue, isDark),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.analytics_outlined, color: Colors.orange, size: 14),
+                      const SizedBox(width: 8),
+                      Text("ANALYSE DES BOTTLENECKS", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (data['bottlenecks'] != null)
+                    ...(data['bottlenecks'] as List).map((b) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 16),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(b['location'], style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 11, fontWeight: FontWeight.bold)),
+                                Text(b['reason'], style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10)),
+                              ],
+                            ),
+                          ),
+                          Text(b['delay_avg'], style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    )).toList(),
                 ],
               ),
             );
@@ -280,45 +386,108 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("CENTRE TECHNIQUE SIG (POWERED BY ARCGIS)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.blueAccent : Colors.blue)),
+        Text("PLATEFORME DÉCISIONNELLE SIG (POWERED BY ARCGIS 2026)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.5, color: isDark ? Colors.blueAccent : Colors.blue)),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF161B22) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.blue.withOpacity(isDark ? 0.2 : 0.4)),
+            boxShadow: [
+              if (!isDark) BoxShadow(color: Colors.blue.withOpacity(0.05), blurRadius: 40, offset: const Offset(0, 10)),
+            ],
           ),
           child: Column(
             children: [
               Row(
                 children: [
-                  const Icon(Icons.hub_outlined, color: Colors.blue, size: 24),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.hub_outlined, color: Colors.blue, size: 28),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Connexion ArcGIS Online", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text("Synchronisation temps réel avec le portail du Ministère.", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
+                        Text("Oracle Géospatial (ArcGIS Online)", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w900, fontSize: 15)),
+                        Text("Vérification topologique en temps réel des parcelles cadastrales.", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                    child: const Text("SYNCHRO OK", style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 12),
+                        SizedBox(width: 6),
+                        Text("PORTAL SYNCED", style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const Divider(height: 32),
-              _buildGISAction("Vérification non-chevauchement", "PASS", isDark),
-              _buildGISAction("Topologie du Cadastre", "VALIDE", isDark),
-              _buildGISAction("Calcul Précision GPS", "0.05m", isDark),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Divider(height: 1),
+              ),
+              Row(
+                children: [
+                  _buildGisMetric("Précision SIG", "0.005m", Icons.gps_fixed, isDark),
+                  _buildGisMetric("Superpositions", "ZÉRO", Icons.layers_clear, isDark),
+                  _buildGisMetric("Satellite", "14 SATS", Icons.satellite_alt, isDark),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildGISAction("Audit de Topologie ArcGIS", "PASS (100%)", isDark),
+              _buildGISAction("Vérification Non-Chevauchement", "OK", isDark),
+              _buildGISAction("Calcul du Géo-Hash MSP", "VALIDE", isDark),
+              _buildGISAction("Inclusion Zone Protégée", "AUCUNE DÉTECTION", isDark),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_user, color: Colors.blue, size: 20),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Text(
+                        "L'Oracle ArcGIS garantit techniquement l'unicité de la propriété physique avant toute écriture sur le registre blockchain.",
+                        style: TextStyle(color: Colors.blueAccent, fontSize: 10, fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGisMetric(String label, String value, IconData icon, bool isDark) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.blue[200], size: 20),
+          const SizedBox(height: 8),
+          Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w900, color: isDark ? Colors.white : Colors.black87)),
+          Text(label, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 8, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 
