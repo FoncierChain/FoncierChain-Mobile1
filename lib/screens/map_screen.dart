@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
 
@@ -71,10 +72,10 @@ class _MapScreenState extends State<MapScreen> {
       case MapLayerType.satellite:
         return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
       case MapLayerType.terrain:
-        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
       case MapLayerType.street:
       default:
-        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
     }
   }
 
@@ -93,7 +94,7 @@ class _MapScreenState extends State<MapScreen> {
       children: [
         TileLayer(
           urlTemplate: _getTileUrl(currentMapType),
-          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.foncierchain.app',
         ),
         PolygonLayer(
           polygons: [
@@ -153,6 +154,14 @@ class _MapScreenState extends State<MapScreen> {
             );
           }).toList(),
         ),
+        RichAttributionWidget(
+          attributions: [
+            TextSourceAttribution(
+              'Basemap © Esri',
+              onTap: () => launchUrl(Uri.parse('https://www.esri.com/')),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -204,6 +213,12 @@ class _MapScreenState extends State<MapScreen> {
     switch (status) {
       case 'FINALIZED':
         return Colors.green;
+      case 'ESCROW_OPENED':
+        return Colors.cyan;
+      case 'PENDING_OPPOSITION':
+        return Colors.amber;
+      case 'FROZEN_OPPOSITION':
+        return Colors.red;
       case 'NOTARY_VALIDATED':
         return Colors.blue[800]!;
       case 'COMMUNITY_VALIDATED':
@@ -533,7 +548,25 @@ class _MapScreenState extends State<MapScreen> {
       bottom: 24,
       left: 24,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00963F).withOpacity(0.9),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              "ARCGIS ONLINE",
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           _buildMapTypeControl(Icons.map, MapLayerType.street, currentMapType, isDark, service),
           const SizedBox(height: 8),
           _buildMapTypeControl(Icons.satellite_alt, MapLayerType.satellite, currentMapType, isDark, service),

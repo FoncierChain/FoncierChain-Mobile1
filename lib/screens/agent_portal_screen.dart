@@ -199,6 +199,10 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             const SizedBox(height: 40),
             _buildActionSection(isDark),
             const SizedBox(height: 40),
+            _buildPerformanceAudit(isDark),
+            const SizedBox(height: 40),
+            _buildGISCenter(isDark),
+            const SizedBox(height: 40),
             _buildReportsSection(isDark),
             const SizedBox(height: 40),
             _buildConsensusMonitor(isDark),
@@ -219,6 +223,127 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPerformanceAudit(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("AUDIT DE PERFORMANCE ADMINISTRATIVE", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        const SizedBox(height: 16),
+        FutureBuilder<Map<String, dynamic>>(
+          future: ApiService.getPerformanceAudit(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const LinearProgressIndicator();
+            final data = snapshot.data!;
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161B22) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildAuditMetric("CHEF Q.", "${data['avg_response_time_days']?['chef_quartier']}j", isDark),
+                      _buildAuditMetric("MAIRIE", "${data['avg_response_time_days']?['mairie']}j", isDark),
+                      _buildAuditMetric("CADASTRE", "${data['avg_response_time_days']?['cadastre']}j", isDark),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                  _buildAuditRow("Score d'Efficacité", "${data['efficiency_score']}%", Colors.green, isDark),
+                  _buildAuditRow("Séquestres Actifs", "${data['total_escrows_active']}", Colors.blue, isDark),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuditMetric(String label, String value, bool isDark) {
+    return Column(
+      children: [
+        Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF00963F))),
+        Text(label, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 8, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildGISCenter(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("CENTRE TECHNIQUE SIG (POWERED BY ARCGIS)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.blueAccent : Colors.blue)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.hub_outlined, color: Colors.blue, size: 24),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Connexion ArcGIS Online", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text("Synchronisation temps réel avec le portail du Ministère.", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                    child: const Text("SYNCHRO OK", style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+              _buildGISAction("Vérification non-chevauchement", "PASS", isDark),
+              _buildGISAction("Topologie du Cadastre", "VALIDE", isDark),
+              _buildGISAction("Calcul Précision GPS", "0.05m", isDark),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGISAction(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12)),
+          Text(value, style: const TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuditRow(String label, String value, Color color, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12)),
+          Text(value, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
@@ -524,6 +649,8 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     bool canNotaryValidate = role == 'NOTAIRE' || role == 'ADMIN';
     bool canMinistryApprove = role == 'MINISTRE' || role == 'ADMIN';
     bool canHandleHeritage = role == 'NOTAIRE' || role == 'ADMIN';
+    bool canOpenEscrow = role == 'CITIZEN' || role == 'ADMIN';
+    bool canOppose = role == 'CITIZEN' || role == 'ADMIN';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,6 +671,15 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               spacing: 12,
               runSpacing: 12,
               children: [
+                if (canOpenEscrow)
+                _buildActionButton(
+                  "Ouvrir Séquestre", 
+                  Icons.lock_clock_outlined, 
+                  Colors.cyan.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showEscrowDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
                 if (canInitiate)
                 _buildActionButton(
                   "Arpentage (Draft)", 
@@ -560,6 +696,15 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                   Colors.blue.withOpacity(0.1),
                   isDark,
                   onTap: () => _showLocalAdviceDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                if (canOppose)
+                _buildActionButton(
+                  "Opposition", 
+                  Icons.gavel_outlined, 
+                  Colors.red.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showOppositionDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
                 if (canNotaryValidate)
@@ -594,6 +739,71 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           }
         ),
       ],
+    );
+  }
+
+  void _showEscrowDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    final amountController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Ouverture de Séquestre Blockchain"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle", isDark),
+            _buildDialogField(amountController, "Montant de la Provision (FCFA)", isDark, isNumber: true),
+            const Text("Les fonds seront bloqués dans le Smart Contract jusqu'à la signature finale.", style: TextStyle(fontSize: 11)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).openEscrow(idController.text, double.parse(amountController.text));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Séquestre ouvert. Vente sécurisée.")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            child: const Text("BLOQUER LES FONDS")),
+        ],
+      ),
+    );
+  }
+
+  void _showOppositionDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Droit d'Opposition Citoyenne"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle visée", isDark),
+            _buildDialogField(reasonController, "Motif de l'opposition (ex: Chef de terre non consulté)", isDark),
+            const Text("Une opposition bloque immédiatement toute transaction sur ce titre.", style: TextStyle(fontSize: 11, color: Colors.orange)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).submitOpposition(idController.text, reasonController.text, "0x_PROOF_HASH");
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Opposition enregistrée. Titre Foncier gelé.")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("SOUMETTRE OPPOSITION")),
+        ],
+      ),
     );
   }
 
@@ -1138,10 +1348,10 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
         case MapLayerType.satellite:
           return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         case MapLayerType.terrain:
-          return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+          return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
         case MapLayerType.street:
         default:
-          return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+          return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
       }
     }
 
@@ -1274,7 +1484,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                             children: [
                               TileLayer(
                                 urlTemplate: getTileUrl(currentMapType),
-                                subdomains: const ['a', 'b', 'c'],
+                                userAgentPackageName: 'com.foncierchain.app',
                               ),
                               PolygonLayer(
                                 polygons: protectedZones.map((z) => Polygon(

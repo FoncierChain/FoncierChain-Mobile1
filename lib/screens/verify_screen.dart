@@ -276,11 +276,34 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Divider(color: isDark ? Colors.white10 : Colors.black12),
               ),
-              Text("LOGIQUE DE CONFIANCE (3 SIGNATURES)", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
+              Text("LOGIQUE DE CONFIANCE (DÉPÔT SÉQUESTRE + 5 PHASES)", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildValidationStep("1. Avis Local (Chef de Quartier)", parcel.localAdvice != null, parcel.localAdvice, isDark),
-              _buildValidationStep("2. Validation Authentique (Notaire)", parcel.notarySignature != null, parcel.notarySignature, isDark),
-              _buildValidationStep("3. Titre NFT (Ministère / Conservation)", parcel.ministrySignature != null, parcel.ministrySignature, isDark),
+              _buildValidationStep("1. Provision / Séquestre (Escrow)", parcel.escrowAmount != null && parcel.escrowAmount! > 0, parcel.escrowOpenedAt != null ? "Fonds bloqués le ${parcel.escrowOpenedAt!.substring(0, 10)}" : null, isDark),
+              _buildValidationStep("2. Avis Local (Chef de Quartier)", parcel.localAdvice != null, parcel.localAdvice, isDark),
+              _buildValidationStep("3. Vacance Numérique (30 Jours)", parcel.status == 'FINALIZED' || parcel.status == 'NOTARY_VALIDATED', "Période légale de contestation", isDark),
+              _buildValidationStep("4. Validation Authentique (Notaire)", parcel.notarySignature != null, parcel.notarySignature, isDark),
+              _buildValidationStep("5. Titre NFT (Ministère / Conservation)", parcel.ministrySignature != null, parcel.ministrySignature, isDark),
+              if (parcel.status == 'FROZEN_OPPOSITION') ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withOpacity(0.3))),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.gavel, color: Colors.orange, size: 16),
+                          SizedBox(width: 8),
+                          Text("OPPOSITION EN COURS", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 11)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text("Motif: ${parcel.oppositionReason ?? 'Non spécifié'}", style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                    ],
+                  ),
+                ),
+              ],
               if (parcel.txId != null) ...[
                 const SizedBox(height: 24),
                 Text("HASH DE TRANSACTION", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
@@ -335,6 +358,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
       case 'FINALIZED':
         color = Colors.green;
         label = "TITRE NFT ÉMIS";
+        break;
+      case 'ESCROW_OPENED':
+        color = Colors.cyan;
+        label = "SÉQUESTRE OUVERT";
+        break;
+      case 'PENDING_OPPOSITION':
+        color = Colors.amber;
+        label = "VACANCE NUMÉRIQUE (30j)";
+        break;
+      case 'FROZEN_OPPOSITION':
+        color = Colors.red;
+        label = "GELÉ (OPPOSITION)";
         break;
       case 'NOTARY_VALIDATED':
         color = Colors.blue[800]!;

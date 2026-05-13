@@ -201,6 +201,26 @@ class ApiService {
 
   // --- IBIVI / FANCIERCHAIN 2026 WORKFLOW ---
 
+  static Future<Map<String, dynamic>> openEscrow(String landId, double amount) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/escrow/open'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'amount': amount}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> submitOpposition(String landId, String reason, String proofHash) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/oppose'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'reason': reason, 'proof_hash': proofHash}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> getPerformanceAudit() async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/land/performance-audit')));
+  }
+
   static Future<Map<String, dynamic>> giveLocalAdvice(String landId, String comment, String action) async {
     return _handleResponse(http.post(
       Uri.parse('$baseUrl/land/local-advice'),

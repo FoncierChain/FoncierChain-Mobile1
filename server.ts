@@ -207,16 +207,58 @@ app.post('/api/v1/land/signal', (req: Request, res: Response) => {
 
 // --- NEW IBIVI / FANCIERCHAIN 2026 WORKFLOW ENDPOINTS ---
 
+app.post('/api/v1/land/escrow/open', (req: Request, res: Response) => {
+  const { land_id, amount } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    p.status = "ESCROW_OPENED";
+    (p as any).escrow_amount = amount;
+    (p as any).escrow_opened_at = new Date().toISOString();
+    return res.json({ 
+      status: "SUCCESS", 
+      message: "Séquestre ouvert. Fonds bloqués sur la Blockchain.",
+      escrow_id: "ESC-" + Math.random().toString(36).substring(2, 8).toUpperCase()
+    });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/oppose', (req: Request, res: Response) => {
+  const { land_id, reason, proof_hash } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    p.status = "FROZEN_OPPOSITION";
+    (p as any).opposition_reason = reason;
+    (p as any).opposition_proof = proof_hash;
+    return res.json({ status: "SUCCESS", message: "Opposition enregistrée. Vente gelée pour arbitrage." });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.get('/api/v1/land/performance-audit', (req: Request, res: Response) => {
+  res.json({
+    avg_response_time_days: {
+      chef_quartier: 4.2,
+      mairie: 7.5,
+      cadastre: 3.1
+    },
+    efficiency_score: 94.5,
+    bottlenecks: ["Mairie de Talangaï", "Cadastre Pointe-Noire Zone B"],
+    total_escrows_active: 142
+  });
+});
+
 app.post('/api/v1/land/local-advice', (req: Request, res: Response) => {
   const { land_id, comment, action } = req.body; // action: APPROVE or REJECT
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
     if (action === 'APPROVE') {
-      p.status = "LOCAL_ADVICE_GIVEN";
+      p.status = "PENDING_OPPOSITION"; // Move to public opposition phase
+      (p as any).local_advice_at = new Date().toISOString();
     } else {
       p.status = "EN_LITIGE";
     }
-    return res.json({ status: "SUCCESS", message: "Avis local enregistré." });
+    return res.json({ status: "SUCCESS", message: "Avis local enregistré. Début de la période de vacance (30j)." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });

@@ -49,6 +49,10 @@ class Parcel {
   final String address;
   final String status;
   final String landType; // New field
+  final double? escrowAmount;
+  final String? escrowOpenedAt;
+  final String? oppositionReason;
+  final String? oppositionProof;
   final String? signatureV1;
   final String? signatureV2;
   final String? signatureV3;
@@ -72,6 +76,10 @@ class Parcel {
     required this.address,
     required this.status,
     required this.landType,
+    this.escrowAmount,
+    this.escrowOpenedAt,
+    this.oppositionReason,
+    this.oppositionProof,
     this.signatureV1,
     this.signatureV2,
     this.signatureV3,
@@ -97,6 +105,10 @@ class Parcel {
       address: data['address'] ?? '',
       status: data['status'] ?? 'DRAFT',
       landType: data['land_type'] ?? 'Cadastre',
+      escrowAmount: (data['escrow_amount'] ?? 0).toDouble(),
+      escrowOpenedAt: data['escrow_opened_at'],
+      oppositionReason: data['opposition_reason'],
+      oppositionProof: data['opposition_proof'],
       signatureV1: data['signature_v1'],
       signatureV2: data['signature_v2'],
       signatureV3: data['signature_v3'],
@@ -353,6 +365,9 @@ class LandService with ChangeNotifier {
 
   final Map<String, int> _statusColors = {
     'DRAFT': 0xFFA9A9A9,
+    'ESCROW_OPENED': 0xFF00BFFF,
+    'PENDING_OPPOSITION': 0xFFFFD700,
+    'FROZEN_OPPOSITION': 0xFFB22222,
     'LOCAL_ADVICE_GIVEN': 0xFF6495ED,
     'COMMUNITY_VALIDATED': 0xFFDA70D6,
     'NOTARY_VALIDATED': 0xFF4169E1,
@@ -379,6 +394,30 @@ class LandService with ChangeNotifier {
   }
 
   // --- IBIVI / FANCIERCHAIN 2026 WORKFLOW METHODS ---
+
+  Future<void> openEscrow(String landId, double amount) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.openEscrow(landId, amount);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur de séquestre");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> submitOpposition(String landId, String reason, String proofHash) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.submitOpposition(landId, reason, proofHash);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur d'opposition");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> giveLocalAdvice(String landId, String comment, String action) async {
     _isLoading = true;
