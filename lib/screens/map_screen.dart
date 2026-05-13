@@ -132,22 +132,7 @@ class _MapScreenState extends State<MapScreen> {
               child: GestureDetector(
                 onTap: () {
                   setState(() {
-                    _selectedParcel = Parcel(
-                      id: data['parcelId']?.toString() ?? data['id']?.toString() ?? 'ID-MIS',
-                      ownerName: data['owner'] ?? 'Inconnu',
-                      ownerId: 'UID-MAP',
-                      city: data['city'] ?? 'Brazzaville',
-                      neighborhood: data['neighborhood'] ?? '',
-                      address: "${data['neighborhood']}, ${data['city']}",
-                      cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId'] ?? data['id']}",
-                      area: (data['area'] ?? data['surface'] as num?)?.toDouble() ?? 0.0,
-                      price: (data['price'] as num?)?.toDouble() ?? 0.0,
-                      usage: data['usage'] ?? 'NA',
-                      status: data['status'] ?? 'DRAFT',
-                      landType: data['land_type'] ?? 'Cadastre',
-                      txId: data['hash'],
-                      lastUpdate: data['createdAt'] != null ? DateTime.parse(data['createdAt']) : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
-                    );
+                    _selectedParcel = Parcel.fromMap(data);
                   });
                 },
                 child: Container(
@@ -219,10 +204,20 @@ class _MapScreenState extends State<MapScreen> {
     switch (status) {
       case 'FINALIZED':
         return Colors.green;
+      case 'NOTARY_VALIDATED':
+        return Colors.blue[800]!;
       case 'COMMUNITY_VALIDATED':
-        return Colors.blue;
+        return Colors.purple;
+      case 'LOCAL_ADVICE_GIVEN':
+        return Colors.blue[300]!;
+      case 'EN_LITIGE':
+        return Colors.orange[900]!;
+      case 'BLOCKED_FOR_HERITAGE':
+        return Colors.red[900]!;
+      case 'DRAFT':
+        return Colors.grey;
       default:
-        return Colors.red;
+        return Colors.redAccent;
     }
   }
 

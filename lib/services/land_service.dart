@@ -52,6 +52,9 @@ class Parcel {
   final String? signatureV1;
   final String? signatureV2;
   final String? signatureV3;
+  final String? notarySignature;
+  final String? ministrySignature;
+  final String? localAdvice;
   final String? documentHash;
   final String? txId;
   final DateTime lastUpdate;
@@ -72,6 +75,9 @@ class Parcel {
     this.signatureV1,
     this.signatureV2,
     this.signatureV3,
+    this.notarySignature,
+    this.ministrySignature,
+    this.localAdvice,
     this.documentHash,
     this.txId,
     required this.lastUpdate,
@@ -94,8 +100,11 @@ class Parcel {
       signatureV1: data['signature_v1'],
       signatureV2: data['signature_v2'],
       signatureV3: data['signature_v3'],
+      notarySignature: data['notary_signature'],
+      ministrySignature: data['ministry_signature'],
+      localAdvice: data['local_advice'],
       documentHash: data['hash'] ?? data['documentHash'],
-      txId: data['hash'],
+      txId: data['txId'] ?? data['hash'],
       lastUpdate: data['createdAt'] != null 
           ? DateTime.parse(data['createdAt']) 
           : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
@@ -342,6 +351,16 @@ class LandService with ChangeNotifier {
     _pendingSearchQuery = null;
   }
 
+  final Map<String, int> _statusColors = {
+    'DRAFT': 0xFFA9A9A9,
+    'LOCAL_ADVICE_GIVEN': 0xFF6495ED,
+    'COMMUNITY_VALIDATED': 0xFFDA70D6,
+    'NOTARY_VALIDATED': 0xFF4169E1,
+    'FINALIZED': 0xFF228B22,
+    'EN_LITIGE': 0xFFFF4500,
+    'BLOCKED_FOR_HERITAGE': 0xFF8B0000,
+  };
+
   final Map<String, int> _landTypeColors = {
     'Cadastre': 0xFF009543,
     'Coutumier': 0xFFFBDE4A,
@@ -350,18 +369,77 @@ class LandService with ChangeNotifier {
     'Minière': 0xFF708090,
     'Forestière': 0xFF006400,
     'En Vente': 0xFF00BFFF,
-    'Litige': 0xFFFF4500,
-    'DRAFT': 0xFFA9A9A9,
-    'COMMUNITY_VALIDATED': 0xFFDA70D6,
-    'FINALIZED': 0xFF228B22,
   };
 
   int getLandColor(String? type, String? status) {
-    if (status == 'LITIGE' || status == 'EN_LITIGE') return _landTypeColors['Litige']!;
-    if (status == 'DRAFT') return _landTypeColors['DRAFT']!;
-    if (status == 'COMMUNITY_VALIDATED') return _landTypeColors['COMMUNITY_VALIDATED']!;
-    if (status == 'FINALIZED') return _landTypeColors['FINALIZED']!;
+    if (_statusColors.containsKey(status)) {
+      return _statusColors[status]!;
+    }
     return _landTypeColors[type] ?? _landTypeColors['Cadastre']!;
+  }
+
+  // --- IBIVI / FANCIERCHAIN 2026 WORKFLOW METHODS ---
+
+  Future<void> giveLocalAdvice(String landId, String comment, String action) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.giveLocalAdvice(landId, comment, action);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur d'avis local");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> notaryValidate(String landId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final signature = generateSecureSignature(landId, "NOTARY_VALIDATED");
+      final res = await ApiService.notaryValidate(landId, signature);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur notaire");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> ministryApprove(String landId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final signature = generateSecureSignature(landId, "FINALIZED");
+      final res = await ApiService.ministryApprove(landId, signature);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur ministérielle");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> notifyHeritage(String landId, String deathCertId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.notifyHeritage(landId, deathCertId);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur notification héritage");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fragmentHeritage(String landId, List<Map<String, dynamic>> heirs) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.fragmentHeritage(landId, heirs);
+      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur fragmentation");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> registerOwner({

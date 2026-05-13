@@ -344,7 +344,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               const Icon(Icons.bug_report, color: Colors.amber, size: 18),
               const SizedBox(width: 12),
               Text(
-                "CONSOLE DE SIMULATION (DÉMO)",
+                "CONSOLE IBIVI / FANCIERCHAIN 2026",
                 style: GoogleFonts.jetBrainsMono(
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
@@ -356,7 +356,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            "Changez de rôle institutionnel pour tester le workflow à 3 signatures :",
+            "Changez de rôle institutionnel pour tester le workflow Blockchain (NFT Titre Foncier) :",
             style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12),
           ),
           const SizedBox(height: 12),
@@ -364,11 +364,12 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildRoleChip(service, "GEOMETRE", "1. Initiation", isDark),
-              _buildRoleChip(service, "COMMUNITY", "2. Validation", isDark),
-              _buildRoleChip(service, "AGENT", "3. Finalisation / Mutation", isDark),
+              _buildRoleChip(service, "GEOMETRE", "1. Géomètre (Arpentage)", isDark),
+              _buildRoleChip(service, "CHEF_QUARTIER", "2. Chef de Quartier (Avis)", isDark),
+              _buildRoleChip(service, "NOTAIRE", "3. Notaire (Vérification)", isDark),
+              _buildRoleChip(service, "MINISTRE", "4. Ministre/Préfet (Minting)", isDark),
               _buildRoleChip(service, "ADMIN", "Admin", isDark),
-              _buildRoleChip(service, null, "Citoyen (Réel)", isDark),
+              _buildRoleChip(service, null, "Citoyen", isDark),
             ],
           ),
         ],
@@ -519,12 +520,10 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     final role = service.userRole;
 
     bool canInitiate = role == 'GEOMETRE' || role == 'ADMIN';
-    bool canValidate = role == 'COMMUNITY' || role == 'ADMIN';
-    bool canFinalize = role == 'AGENT' || role == 'ADMIN';
-    bool canMutation = role == 'AGENT' || role == 'ADMIN';
-
-    bool canReviewKYC = role == 'ADMIN' || role == 'KYC_TEAM';
-    bool canApproveDraft = role == 'ADMIN' || role == 'GEOM_TEAM';
+    bool canGiveAdvice = role == 'CHEF_QUARTIER' || role == 'ADMIN';
+    bool canNotaryValidate = role == 'NOTAIRE' || role == 'ADMIN';
+    bool canMinistryApprove = role == 'MINISTRE' || role == 'ADMIN';
+    bool canHandleHeritage = role == 'NOTAIRE' || role == 'ADMIN';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,7 +531,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("OPÉRATIONS RÉSERVÉES AU RÔLE : $role", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? const Color(0xFF00963F) : Colors.green)),
+            Text("LOGIQUE MÉTIER BLOQUANTE : $role", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? const Color(0xFF00963F) : Colors.green)),
             if (service.currentUser != null && !service.currentUser!.isKYCVerified)
               _buildKYCBadge(isDark),
           ],
@@ -545,49 +544,49 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               spacing: 12,
               runSpacing: 12,
               children: [
-                if (canApproveDraft)
-                _buildActionButton(
-                  "Approuver Draft", 
-                  Icons.check_circle_outline, 
-                  Colors.blue.withOpacity(0.1),
-                  isDark,
-                  onTap: () => _showReviewDraftDialog(context, isDark),
-                  width: isMobile ? double.infinity : 150,
-                ),
-                if (canReviewKYC)
-                _buildActionButton(
-                  "Review KYC", 
-                  Icons.how_to_reg_outlined, 
-                  Colors.purple.withOpacity(0.1),
-                  isDark,
-                  onTap: () => _showReviewKYCDialog(context, isDark),
-                  width: isMobile ? double.infinity : 150,
-                ),
                 if (canInitiate)
                 _buildActionButton(
-                  "Initier Draft", 
+                  "Arpentage (Draft)", 
                   Icons.add_location_alt_outlined, 
                   const Color(0xFF00963F).withOpacity(0.1),
                   isDark,
                   onTap: () => _showInitiateDraftDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
-                if (canFinalize)
+                if (canGiveAdvice)
                 _buildActionButton(
-                  "Finalisation État", 
-                  Icons.verified_user_outlined, 
-                  const Color(0xFF00963F).withOpacity(0.1),
+                  "Avis Quartier", 
+                  Icons.comment_bank_outlined, 
+                  Colors.blue.withOpacity(0.1),
                   isDark,
-                  onTap: () => _showFinalizeStateDialog(context, isDark),
+                  onTap: () => _showLocalAdviceDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
-                if (canMutation)
+                if (canNotaryValidate)
                 _buildActionButton(
-                  "Mutation", 
-                  Icons.swap_horiz_outlined, 
-                  const Color(0xFF00963F).withOpacity(0.1),
+                  "Validation Notaire", 
+                  Icons.assignment_turned_in_outlined, 
+                  Colors.purple.withOpacity(0.1),
                   isDark,
-                  onTap: () => _showTransferDialog(context, isDark),
+                  onTap: () => _showNotaryValidateDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                if (canMinistryApprove)
+                _buildActionButton(
+                  "Mint NFT (Titre)", 
+                  Icons.auto_awesome_motion, 
+                  Colors.amber.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showMinistryApproveDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
+                if (canHandleHeritage)
+                _buildActionButton(
+                  "Succession", 
+                  Icons.family_restroom_outlined, 
+                  Colors.orange.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showHeritageDialog(context, isDark),
                   width: isMobile ? double.infinity : 150,
                 ),
               ],
@@ -595,6 +594,136 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           }
         ),
       ],
+    );
+  }
+
+  void _showLocalAdviceDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    final commentController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Avis du Chef de Quartier"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle", isDark),
+            _buildDialogField(commentController, "Commentaire sur le litige coutumier", isDark),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).giveLocalAdvice(idController.text, commentController.text, 'REJECT');
+                Navigator.pop(context);
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            child: const Text("LITIGE DÉCLARÉ", style: TextStyle(color: Colors.red))),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).giveLocalAdvice(idController.text, commentController.text, 'APPROVE');
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Avis favorable enregistré.")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            child: const Text("APPROUVER")),
+        ],
+      ),
+    );
+  }
+
+  void _showNotaryValidateDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Validation Notariale"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle", isDark),
+            const Text("En tant que Notaire, vous vérifiez l'origine des fonds et le KYC.", style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).notaryValidate(idController.text);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Dossier validé par le Notaire.")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            child: const Text("SIGNER NUMÉRIQUEMENT")),
+        ],
+      ),
+    );
+  }
+
+  void _showMinistryApproveDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Approbation Finale (Minting NFT)"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Parcelle", isDark),
+            const Text("Autorisation finale pour l'émission du Titre Foncier Numérique.", style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).ministryApprove(idController.text);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("TITRE FONCIER GÉNÉRÉ SUR LA BLOCKCHAIN !")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+            child: const Text("APPROBATION SUPRÊME")),
+        ],
+      ),
+    );
+  }
+
+  void _showHeritageDialog(BuildContext context, bool isDark) {
+    final idController = TextEditingController();
+    final certController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Gestion des Successions"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(idController, "ID Titre NFT du défunt", isDark),
+            _buildDialogField(certController, "N° Acte de Décès", isDark),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await Provider.of<LandService>(context, listen: false).notifyHeritage(idController.text, certController.text);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Titre bloqué. NFT en attente de fragmentation.")));
+              } catch (e) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e"))); }
+            }, 
+            child: const Text("SIGNALER DÉCÈS & BLOQUER")),
+        ],
+      ),
     );
   }
 

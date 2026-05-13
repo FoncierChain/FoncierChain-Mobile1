@@ -199,6 +199,48 @@ class ApiService {
     ));
   }
 
+  // --- IBIVI / FANCIERCHAIN 2026 WORKFLOW ---
+
+  static Future<Map<String, dynamic>> giveLocalAdvice(String landId, String comment, String action) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/local-advice'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'comment': comment, 'action': action}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> notaryValidate(String landId, String signature) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/notary-validate'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'signature': signature}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> ministryApprove(String landId, String signature) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/ministry-approve'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'signature': signature}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> notifyHeritage(String landId, String deathCertId) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/heritage-notify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'death_cert_id': deathCertId}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> fragmentHeritage(String landId, List<Map<String, dynamic>> heirs) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/heritage-fragment'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'heirs': heirs}),
+    ));
+  }
+
   static Future<dynamic> citizenVerify(String query) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/citizen/verify?land_id=$query'));

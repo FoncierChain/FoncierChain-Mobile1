@@ -276,11 +276,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Divider(color: isDark ? Colors.white10 : Colors.black12),
               ),
-              Text("VALIDATION BLOCKCHAIN", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
+              Text("LOGIQUE DE CONFIANCE (3 SIGNATURES)", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildValidationStep("Signature V2 (Géomètre)", parcel.signatureV2 != null, parcel.signatureV2, isDark),
-              _buildValidationStep("Signature V3 (Communauté)", parcel.signatureV3 != null, parcel.signatureV3, isDark),
-              _buildValidationStep("Signature V1 (État)", parcel.signatureV1 != null, parcel.signatureV1, isDark),
+              _buildValidationStep("1. Avis Local (Chef de Quartier)", parcel.localAdvice != null, parcel.localAdvice, isDark),
+              _buildValidationStep("2. Validation Authentique (Notaire)", parcel.notarySignature != null, parcel.notarySignature, isDark),
+              _buildValidationStep("3. Titre NFT (Ministère / Conservation)", parcel.ministrySignature != null, parcel.ministrySignature, isDark),
               if (parcel.txId != null) ...[
                 const SizedBox(height: 24),
                 Text("HASH DE TRANSACTION", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 9, fontWeight: FontWeight.bold)),
@@ -328,17 +328,38 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
   Widget _buildStatusBadge(String status) {
-    Color color = Colors.red;
-    String label = status;
-    if (status == 'FINALIZED') {
-      color = Colors.green;
-      label = "FINALISÉ";
-    } else if (status == 'COMMUNITY_VALIDATED') {
-      color = Colors.blue;
-      label = "VALIDÉ (COMM)";
-    } else if (status == 'DRAFT') {
-      color = Colors.orange;
-      label = "DRAFT";
+    Color color = Colors.grey;
+    String label = status.replaceAll('_', ' ');
+
+    switch (status) {
+      case 'FINALIZED':
+        color = Colors.green;
+        label = "TITRE NFT ÉMIS";
+        break;
+      case 'NOTARY_VALIDATED':
+        color = Colors.blue[800]!;
+        label = "VALIDÉ PAR NOTAIRE";
+        break;
+      case 'COMMUNITY_VALIDATED':
+        color = Colors.purple;
+        label = "VALIDÉ (COMMU)";
+        break;
+      case 'LOCAL_ADVICE_GIVEN':
+        color = Colors.blue[300]!;
+        label = "AVIS LOCAL DONNÉ";
+        break;
+      case 'EN_LITIGE':
+        color = Colors.orange[900]!;
+        label = "EN LITIGE";
+        break;
+      case 'BLOCKED_FOR_HERITAGE':
+        color = Colors.red[900]!;
+        label = "SUCCESSION - BLOQUÉ";
+        break;
+      case 'DRAFT':
+        color = Colors.orange;
+        label = "DRAFT (ARPENTAGE)";
+        break;
     }
 
     return Container(

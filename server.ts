@@ -150,18 +150,28 @@ app.use(express.static(webBuildPath));
 
 // --- Auth & KYC Endpoints ---
 app.post('/api/v1/auth', (req: Request, res: Response) => {
+  const { username } = req.body;
+  // Map specific usernames to roles for demo purposes
+  let role = "OWNER";
+  if (username === "notaire") role = "NOTAIRE";
+  if (username === "chef") role = "CHEF_QUARTIER";
+  if (username === "geometre") role = "GEOMETRE";
+  if (username === "ministre") role = "MINISTRE";
+  if (username === "admin") role = "ADMIN";
+
   res.json({ 
     token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
-    user: { id: 1, username: req.body.username, role: "AGENT" }
+    user: { id: Date.now(), username: username, role: role }
   });
 });
 
 app.post('/api/v1/register/owner', (req: Request, res: Response) => {
-  const { username, password, email, phone, id_recto, id_verso } = req.body;
+  const { username, password, email, phone, role } = req.body;
   res.status(201).json({
     status: "SUCCESS",
     message: "Compte créé, KYC en attente.",
-    email: email
+    email: email,
+    role: role || "OWNER"
   });
 });
 
@@ -193,6 +203,69 @@ app.post('/api/v1/land/signal', (req: Request, res: Response) => {
     return res.json({ status: "SUCCESS", message: "Parcelle passée en Litige.", parcel_id: p.parcelId });
   }
   res.status(404).json({ error: "Parcelle non trouvée pour signalement." });
+});
+
+// --- NEW IBIVI / FANCIERCHAIN 2026 WORKFLOW ENDPOINTS ---
+
+app.post('/api/v1/land/local-advice', (req: Request, res: Response) => {
+  const { land_id, comment, action } = req.body; // action: APPROVE or REJECT
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    if (action === 'APPROVE') {
+      p.status = "LOCAL_ADVICE_GIVEN";
+    } else {
+      p.status = "EN_LITIGE";
+    }
+    return res.json({ status: "SUCCESS", message: "Avis local enregistré." });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/notary-validate', (req: Request, res: Response) => {
+  const { land_id, signature } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    p.status = "NOTARY_VALIDATED";
+    (p as any).notary_signature = signature;
+    return res.json({ status: "SUCCESS", message: "Validation notaire effectuée." });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/ministry-approve', (req: Request, res: Response) => {
+  const { land_id, signature } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    p.status = "FINALIZED";
+    (p as any).ministry_signature = signature;
+    p.workflowStep = 3;
+    return res.json({ status: "SUCCESS", message: "Approbation ministérielle finale. NFT généré.", txId: "0x" + Math.random().toString(16).slice(2) });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/heritage-notify', (req: Request, res: Response) => {
+  const { land_id, death_cert_id } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    p.status = "BLOCKED_FOR_HERITAGE";
+    (p as any).death_cert_id = death_cert_id;
+    return res.json({ status: "SUCCESS", message: "Parcelle bloquée pour succession." });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
+});
+
+app.post('/api/v1/land/heritage-fragment', (req: Request, res: Response) => {
+  const { land_id, heirs } = req.body; // heirs: [{"name": "...", "share": 0.5}]
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p) {
+    // In a real scenario, we would split into multiple records
+    p.status = "FINALIZED";
+    (p as any).heirs_info = heirs;
+    p.owner = "Indivision: " + heirs.map((h: any) => h.name).join(", ");
+    return res.json({ status: "SUCCESS", message: "Fragmentation effectuée." });
+  }
+  res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
 app.post('/api/v1/land/approve-draft', (req: Request, res: Response) => {
@@ -287,11 +360,15 @@ app.get('/api/v1/stats', (req: Request, res: Response) => {
     finalized_parcels: 9241,
     validated_parcels: 4500,
     draft_parcels: 1091,
+    notary_pending: 231,
+    heritage_blocked: 45,
+    litige_active: 89,
     total_area: 12450000.5,
     reliability: 100,
     land_usage: [
       { usage_type: "Résidentiel", count: 1000 },
-      { usage_type: "Commercial", count: 500 }
+      { usage_type: "Commercial", count: 500 },
+      { usage_type: "Agricole", count: 300 }
     ]
   });
 });
