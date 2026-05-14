@@ -6,8 +6,7 @@
   "scripts": {
     "start": "tsx server.ts",
     "dev": "tsx server.ts",
-    "build": "echo 'Frontend served from pre-rendered build/web/index.html'",
-    "lint": "tsc --noEmit server.ts"
+    "build": "echo 'Building FoncierChain Node backend and verifying Flutter...' && flutter build web"
   },
   "dependencies": {
     "@types/cors": "^2.8.19",

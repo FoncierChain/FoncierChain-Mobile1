@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
 
@@ -44,22 +43,6 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  bool _isVerifyingTopology = false;
-
-  void _verifyTopology() async {
-    setState(() => _isVerifyingTopology = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _isVerifyingTopology = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF00963F),
-          content: Text("Audit ArcGIS : Aucune superposition détectée (Topology VALID)."),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final navService = Provider.of<LandService>(context);
@@ -74,33 +57,9 @@ class _MapScreenState extends State<MapScreen> {
           _buildSideStats(isDark),
           if (_selectedParcel != null) _buildDetailsPanel(isDark),
           _buildMapControls(isDark),
-          _buildGISCommands(isDark),
-          if (_isLoading || _isVerifyingTopology)
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: (isDark ? Colors.black : Colors.white).withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF00963F).withOpacity(0.3)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: Color(0xFF00963F)),
-                    const SizedBox(height: 16),
-                    Text(
-                      _isVerifyingTopology ? "AUDIT TOPOLOGIE ARCGIS..." : "CHARGEMENT DU CADASTRE...",
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00963F)),
             ),
         ],
       ),
@@ -112,10 +71,10 @@ class _MapScreenState extends State<MapScreen> {
       case MapLayerType.satellite:
         return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
       case MapLayerType.terrain:
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
       case MapLayerType.street:
       default:
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     }
   }
 
@@ -134,7 +93,7 @@ class _MapScreenState extends State<MapScreen> {
       children: [
         TileLayer(
           urlTemplate: _getTileUrl(currentMapType),
-          userAgentPackageName: 'com.foncierchain.app',
+          subdomains: const ['a', 'b', 'c', 'd'],
         ),
         PolygonLayer(
           polygons: [
@@ -193,14 +152,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             );
           }).toList(),
-        ),
-        RichAttributionWidget(
-          attributions: [
-            TextSourceAttribution(
-              'Basemap © Esri',
-              onTap: () => launchUrl(Uri.parse('https://www.esri.com/')),
-            ),
-          ],
         ),
       ],
     );
@@ -285,91 +236,41 @@ class _MapScreenState extends State<MapScreen> {
       top: 64,
       left: 16,
       right: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: containerColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15)],
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "ArcGIS Online : Rechercher une parcelle...",
-                      prefixIcon: const Icon(Icons.travel_explore, color: Colors.blueAccent),
-                      suffixIcon: const Icon(Icons.mic_none, size: 20),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      fillColor: Colors.transparent,
-                      hintStyle: GoogleFonts.inter(fontSize: 13, color: hintColor, fontStyle: FontStyle.italic),
-                    ),
-                    style: TextStyle(color: textColor, fontSize: 13),
-                  ),
-                ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: containerColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15)],
               ),
-              const SizedBox(width: 8),
-              _buildModernMapButton(Icons.layers_outlined, () {}, isDark),
-              const SizedBox(width: 8),
-              _buildModernMapButton(Icons.query_stats, () {}, isDark),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.cloud_done, color: Colors.white, size: 10),
-                const SizedBox(width: 6),
-                Text(
-                  "SERVICESTATUS: CONNECTED TO ARCGIS PORTAL",
-                  style: GoogleFonts.jetBrainsMono(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Rechercher une zone, un ID...",
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  fillColor: Colors.transparent,
+                  hintStyle: GoogleFonts.inter(fontSize: 14, color: hintColor),
                 ),
-              ],
+                style: TextStyle(color: textColor),
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernMapButton(IconData icon, VoidCallback onTap, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF161B22) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: isDark ? Colors.white70 : Colors.black54, size: 20),
-        padding: const EdgeInsets.all(12),
-      ),
-    );
-  }
-
-  Widget _buildGISCommands(bool isDark) {
-    return Positioned(
-      top: 150,
-      right: 24,
-      child: Column(
-        children: [
-          _buildMapButton(Icons.security, _verifyTopology, isDark, color: Colors.blueAccent),
-          const SizedBox(height: 8),
-          _buildMapButton(Icons.history_edu, () {}, isDark),
-          const SizedBox(height: 8),
-          _buildMapButton(Icons.share_location, () {}, isDark),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: containerColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+            ),
+            child: Icon(Icons.filter_list, color: isDark ? Colors.white70 : Colors.black54, size: 20),
+          ),
         ],
       ),
     );
@@ -638,25 +539,7 @@ class _MapScreenState extends State<MapScreen> {
       bottom: 24,
       left: 24,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00963F).withOpacity(0.9),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              "ARCGIS ONLINE",
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
           _buildMapTypeControl(Icons.map, MapLayerType.street, currentMapType, isDark, service),
           const SizedBox(height: 8),
           _buildMapTypeControl(Icons.satellite_alt, MapLayerType.satellite, currentMapType, isDark, service),
@@ -689,7 +572,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMapButton(IconData icon, VoidCallback onTap, bool isDark, {Color? color}) {
+  Widget _buildMapButton(IconData icon, VoidCallback onTap, bool isDark) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -701,7 +584,7 @@ class _MapScreenState extends State<MapScreen> {
           border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
         ),
-        child: Icon(icon, size: 20, color: color ?? (isDark ? Colors.white70 : Colors.black54)),
+        child: Icon(icon, size: 20, color: isDark ? Colors.white70 : Colors.black54),
       ),
     );
   }

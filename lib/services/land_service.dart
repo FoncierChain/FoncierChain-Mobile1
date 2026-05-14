@@ -48,13 +48,11 @@ class Parcel {
   final String usage;
   final String address;
   final String status;
-  final String landType; 
+  final String landType; // New field
   final double? escrowAmount;
   final String? escrowOpenedAt;
-  final String? localAdviceAt;
   final String? oppositionReason;
   final String? oppositionProof;
-  final String? geometricHash;
   final String? signatureV1;
   final String? signatureV2;
   final String? signatureV3;
@@ -80,10 +78,8 @@ class Parcel {
     required this.landType,
     this.escrowAmount,
     this.escrowOpenedAt,
-    this.localAdviceAt,
     this.oppositionReason,
     this.oppositionProof,
-    this.geometricHash,
     this.signatureV1,
     this.signatureV2,
     this.signatureV3,
@@ -97,24 +93,22 @@ class Parcel {
 
   factory Parcel.fromMap(Map<String, dynamic> data) {
     return Parcel(
-      id: data['parcelId']?.toString() ?? data['id']?.toString() ?? '',
-      ownerName: data['owner'] ?? data['currentOwner'] ?? data['ownerName'] ?? 'Inconnu',
+      id: data['parcelId'] ?? data['id']?.toString() ?? '',
+      ownerName: data['owner'] ?? data['currentOwner'] ?? data['ownerName'] ?? '',
       ownerId: data['ownerId'] ?? 'UID-TEMP',
       city: data['city'] ?? 'Brazzaville',
       neighborhood: data['neighborhood'] ?? '',
       cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId'] ?? data['id']}",
       area: (data['area'] ?? data['surface'] ?? 0).toDouble(),
       price: (data['price'] ?? 0).toDouble(),
-      usage: data['usage'] ?? data['usage_type'] ?? 'Usage Non Défini',
+      usage: data['usage'] ?? data['usage_type'] ?? '',
       address: data['address'] ?? '',
       status: data['status'] ?? 'DRAFT',
       landType: data['land_type'] ?? 'Cadastre',
       escrowAmount: (data['escrow_amount'] ?? 0).toDouble(),
       escrowOpenedAt: data['escrow_opened_at'],
-      localAdviceAt: data['local_advice_at'],
       oppositionReason: data['opposition_reason'],
       oppositionProof: data['opposition_proof'],
-      geometricHash: data['geometric_hash'] ?? "GH-${data['parcelId'] ?? data['id'] ?? 'NA'}",
       signatureV1: data['signature_v1'],
       signatureV2: data['signature_v2'],
       signatureV3: data['signature_v3'],
@@ -372,14 +366,12 @@ class LandService with ChangeNotifier {
   final Map<String, int> _statusColors = {
     'DRAFT': 0xFFA9A9A9,
     'ESCROW_OPENED': 0xFF00BFFF,
-    'AWAITING_LOCAL_ADVICE': 0xFFFF8C00,
     'PENDING_OPPOSITION': 0xFFFFD700,
     'FROZEN_OPPOSITION': 0xFFB22222,
-    'FINAL_SETTLEMENT': 0xFF9932CC,
     'LOCAL_ADVICE_GIVEN': 0xFF6495ED,
     'COMMUNITY_VALIDATED': 0xFFDA70D6,
     'NOTARY_VALIDATED': 0xFF4169E1,
-    'FINALIZED': 0xFF00963F,
+    'FINALIZED': 0xFF228B22,
     'EN_LITIGE': 0xFFFF4500,
     'BLOCKED_FOR_HERITAGE': 0xFF8B0000,
   };
