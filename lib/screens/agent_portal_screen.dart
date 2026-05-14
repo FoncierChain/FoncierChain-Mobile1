@@ -1742,11 +1742,12 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildDialogField(TextEditingController controller, String label, bool isDark, {bool isNumber = false}) {
+  Widget _buildDialogField(TextEditingController controller, String label, bool isDark, {bool isNumber = false, bool obscure = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
+        obscureText: obscure,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         decoration: InputDecoration(

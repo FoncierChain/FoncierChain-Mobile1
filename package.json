@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx server.ts",
     "dev": "tsx server.ts",
-    "build": "echo 'Building FoncierChain Node backend and verifying Flutter...' && flutter build web"
+    "build": "echo 'Building FoncierChain Node backend and verifying Flutter...' && flutter build web",
+    "lint": "flutter analyze"
   },
   "dependencies": {
     "@types/cors": "^2.8.19",

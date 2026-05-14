@@ -509,13 +509,14 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<void> reportDispute(String landId, String reason) async {
+  Future<void> signalFraud(String? landId, String? cadastralId, String reason) async {
     if (_currentUser == null) return;
     _isLoading = true;
     notifyListeners();
     try {
       final res = await ApiService.signalFraud({
         'land_id': landId,
+        'cadastral_id': cadastralId,
         'reason': reason,
         'reporter_id': _currentUser!.uid,
       });
@@ -526,6 +527,60 @@ class LandService with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> reportDispute(String landId, String reason) async {
+    return signalFraud(landId, null, reason);
+  }
+
+  Future<void> submitOpposition(String landId, String reason, String proofHash) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.submitOpposition(landId, reason, proofHash);
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur opposition");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> validateCommunity(String landId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final signature = generateSecureSignature(landId, "COMMUNITY_VALIDATED");
+      final res = await ApiService.validateLand(landId, signature);
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur validation communautaire");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> finalizeLand(String landId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final signature = generateSecureSignature(landId, "FINALIZED");
+      final res = await ApiService.finalizeLand(landId, signature);
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur finalisation");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<TransactionHistory>> getHistory(String landId) async {
+    try {
+      final res = await ApiService.getLandHistory(landId);
+      if (res['history'] != null) {
+        return (res['history'] as List).map((h) => TransactionHistory.fromMap(h)).toList();
+      }
+    } catch (e) {
+      debugPrint("History error: $e");
+    }
+    return [];
   }
 
   Future<void> login(String username, String password) async {

@@ -171,24 +171,107 @@ class ApiService {
     ));
   }
 
-  static Future<Map<String, dynamic>> heritageSetup(String landId, String heirUid, String heirSignature, String mayorSignature) async {
+  static Future<Map<String, dynamic>> createTicket(Map<String, dynamic> data) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/heritage-setup/'),
+      Uri.parse('$baseUrl/support/tickets/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'land_id': landId,
-        'heir_uid': heirUid,
-        'heir_signature': heirSignature,
-        'mayor_signature': mayorSignature,
-      }),
+      body: jsonEncode(data),
     ));
   }
 
-  static Future<Map<String, dynamic>> signalFraud(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> reviewKYC(String username, String action) async {
     return _handleResponse(http.post(
-      Uri.parse('$baseUrl/land/signal-fraud/'),
+      Uri.parse('$baseUrl/kyc/review/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(data),
+      body: jsonEncode({'username': username, 'action': action}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> verifyKYC(String entityId, String idNumber) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/kyc/verify/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'id_number': idNumber}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> approveDraft(String landId, String action) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/approve/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'action': action}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> getPerformanceAudit() async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/land/performance-audit/')));
+  }
+
+  static Future<Map<String, dynamic>> getLandHistory(String landId) async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/land/$landId/history/')));
+  }
+
+  static Future<Map<String, dynamic>> getCongoGeoData() async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/geo/congo/')));
+  }
+
+  static Future<Map<String, dynamic>> sendChatMessage(String message) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/support/chat/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'message': message}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> openEscrow(String landId, double amount) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/escrow/open/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'amount': amount}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> notifyHeritage(String landId, String deathCertId) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/heritage-notify/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'death_cert_id': deathCertId}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> mutateLand(String landId, String newOwnerId) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/mutate/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'new_owner_id': newOwnerId}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> getReports() async {
+    return _handleResponse(http.get(Uri.parse('$baseUrl/reports/')));
+  }
+
+  static Future<Map<String, dynamic>> submitOpposition(String landId, String reason, String proofHash) async {
+    return _handleResponse(http.post(
+      Uri.parse('$baseUrl/land/oppose/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'reason': reason, 'proof_hash': proofHash}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> validateLand(String landId, String signature) async {
+    return _handleResponse(http.patch(
+      Uri.parse('$baseUrl/land/validate/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'signature_v3': signature}),
+    ));
+  }
+
+  static Future<Map<String, dynamic>> finalizeLand(String landId, String signature) async {
+    return _handleResponse(http.patch(
+      Uri.parse('$baseUrl/land/finalize/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'land_id': landId, 'signature_v1': signature}),
     ));
   }
 
