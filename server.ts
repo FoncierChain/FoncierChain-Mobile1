@@ -165,7 +165,6 @@ app.post('/api/v1/auth/login/', (req: Request, res: Response) => {
   if (username === "geometre_controle") { role = "LAND_CONTROL_OFFICIER"; signature = "SIG-CTRL-GEOM"; }
 
   res.json({ 
-    status: "SUCCESS",
     token: "auth_token_" + Math.random().toString(36).substring(7),
     user: { 
       id: 101, 

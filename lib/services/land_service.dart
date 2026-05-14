@@ -587,15 +587,15 @@ class LandService with ChangeNotifier {
     try {
       final res = await ApiService.login(username, password);
       _isOffline = res['is_offline'] == true;
-      if (res['status'] == 'SUCCESS' && res.containsKey('token')) {
-        final userData = res['user'];
+      if (res.containsKey('token')) {
+        final userData = res['user'] ?? {};
         _currentUser = AppUser(
-          uid: userData['unique_id'] ?? 'UID-${userData['id'] ?? '1'}',
-          email: userData['email'] ?? '$username@foncierchain.cg',
+          uid: userData['unique_id']?.toString() ?? 'UID-${userData['id'] ?? '1'}',
+          email: userData['email']?.toString() ?? '$username@foncierchain.cg',
           displayName: (userData['username'] ?? username).toString().toUpperCase(),
-          role: userData['role'] ?? 'AGENT',
-          signature: userData['signature'],
-          kycStatus: userData['kyc_status'],
+          role: userData['role']?.toString() ?? 'AGENT',
+          signature: userData['signature']?.toString(),
+          kycStatus: userData['kyc_status']?.toString(),
           isKYCVerified: userData['kyc_status'] == 'APPROVED',
         );
         _userRole = _currentUser!.role;
