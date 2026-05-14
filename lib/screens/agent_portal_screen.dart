@@ -583,6 +583,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     final service = Provider.of<LandService>(context);
     final role = service.userRole;
 
+    bool canCreateOfficial = role == 'ADMIN';
     bool canInitiate = role == 'GEOMETRE' || role == 'ADMIN';
     bool canGiveAdvice = role == 'CHEF_QUARTIER' || role == 'ADMIN';
     bool canNotaryValidate = role == 'NOTAIRE' || role == 'ADMIN';
@@ -610,6 +611,15 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
               spacing: 12,
               runSpacing: 12,
               children: [
+                if (canCreateOfficial)
+                _buildActionButton(
+                  "Nouveau Officiel", 
+                  Icons.person_add_alt_1_outlined, 
+                  Colors.teal.withOpacity(0.1),
+                  isDark,
+                  onTap: () => _showCreateOfficialDialog(context, isDark),
+                  width: isMobile ? double.infinity : 150,
+                ),
                 if (canOpenEscrow)
                 _buildActionButton(
                   "Ouvrir Séquestre", 
@@ -678,6 +688,70 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           }
         ),
       ],
+    );
+  }
+
+  void _showCreateOfficialDialog(BuildContext context, bool isDark) {
+    final usernameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    String selectedRole = 'GEOMETRE';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        title: const Text("Créer un Compte Officiel"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(usernameController, "Nom d'utilisateur", isDark),
+            _buildDialogField(emailController, "Email", isDark),
+            _buildDialogField(passwordController, "Mot de passe", isDark, obscure: true),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: selectedRole,
+              items: [
+                'MINISTRE', 'SURVEYOR', 'CHEF_QUARTIER', 'NOTAIRE', 
+                'HEAD_OF_CADASTRAL_OFFICE', 'KYC_AGENT', 'LAND_CONTROL_OFFICER'
+              ].map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12)))).toList(),
+              onChanged: (v) => selectedRole = v!,
+              decoration: InputDecoration(
+                labelText: "Rôle institutionnel",
+                labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final data = {
+                  'username': usernameController.text,
+                  'email': emailController.text,
+                  'password': passwordController.text,
+                  'role': selectedRole,
+                  'status': 'APPROVED', // Officials are pre-approved by Admin
+                };
+                final res = await ApiService.registerOfficial(data);
+                if (res['status'] == 'SUCCESS') {
+                   Navigator.pop(context);
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Compte officiel créé avec succès.")));
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? "Erreur lors de la création")));
+                }
+              } catch (e) {
+                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
+              }
+            }, 
+            child: const Text("CRÉER LE COMPTE")),
+        ],
+      ),
     );
   }
 

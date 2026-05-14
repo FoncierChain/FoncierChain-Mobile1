@@ -149,33 +149,62 @@ const webBuildPath = path.join(__dirname, 'build', 'web');
 app.use(express.static(webBuildPath));
 
 // --- Auth & KYC Endpoints ---
-app.post('/api/v1/auth', (req: Request, res: Response) => {
+app.post('/api/v1/auth/login/', (req: Request, res: Response) => {
   const { username } = req.body;
   // Map specific usernames to roles for demo purposes
   let role = "OWNER";
-  if (username === "notaire") role = "NOTAIRE";
-  if (username === "chef") role = "CHEF_QUARTIER";
-  if (username === "geometre") role = "GEOMETRE";
-  if (username === "ministre") role = "MINISTRE";
-  if (username === "admin") role = "ADMIN";
+  let signature = "SIG-OFFICER-7788";
+  let unique_id = "FC-12345678";
+  
+  if (username === "notaire") { role = "NOTAIRE"; signature = "SIG-NOTAIRE-BZA-2026"; }
+  if (username === "chef") { role = "NEIGHBORHOOD_CHIEF"; signature = "SIG-CHIEF-MOUNG-01"; }
+  if (username === "geometre") { role = "SURVEYOR"; signature = "SIG-SURV-BR-2026"; }
+  if (username === "ministre") { role = "MINISTRY_OF_LAND_AFFAIRS"; signature = "SIG-MIN-FONCIER-CG"; }
+  if (username === "cadastre") { role = "HEAD_OF_CADASTRAL_OFFICE"; signature = "SIG-CAD-BZA"; }
+  if (username === "admin") { role = "ADMIN"; signature = "SIG-SYS-ADMIN"; }
+  if (username === "geometre_controle") { role = "LAND_CONTROL_OFFICIER"; signature = "SIG-CTRL-GEOM"; }
 
   res.json({ 
-    token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
-    user: { id: Date.now(), username: username, role: role }
+    status: "SUCCESS",
+    token: "auth_token_" + Math.random().toString(36).substring(7),
+    user: { 
+      id: 101, 
+      username: username, 
+      role: role,
+      unique_id: unique_id,
+      signature: signature,
+      kyc_status: "APPROVED"
+    }
   });
 });
 
-app.post('/api/v1/register/owner', (req: Request, res: Response) => {
-  const { username, password, email, phone, role } = req.body;
+app.post('/api/v1/register/owner/', (req: Request, res: Response) => {
+  const { username, email, phone, role, first_name, last_name, birth_date, gender, id_type, id_number } = req.body;
   res.status(201).json({
     status: "SUCCESS",
-    message: "Compte créé, KYC en attente.",
-    email: email,
-    role: role || "OWNER"
+    message: "Compte propriétaire créé, en attente de validation KYC.",
+    unique_id: "FC-PENDING-" + Math.random().toString(36).substring(2, 6).toUpperCase()
   });
 });
 
-app.post('/api/v1/kyc/submit', (req: Request, res: Response) => {
+app.post('/api/v1/register/official/', (req: Request, res: Response) => {
+  const { username, role, organization } = req.body;
+  res.status(201).json({
+    status: "SUCCESS",
+    user_id: Math.floor(Math.random() * 1000),
+    role: role
+  });
+});
+
+app.post('/api/v1/register/heir/', (req: Request, res: Response) => {
+  const { username, first_name, last_name } = req.body;
+  res.status(201).json({
+    status: "SUCCESS",
+    message: "Compte héritier créé."
+  });
+});
+
+app.post('/api/v1/kyc/submit/', (req: Request, res: Response) => {
   const { id_recto, id_verso, id_number } = req.body;
   res.status(200).json({
     status: "SUCCESS", 
@@ -183,145 +212,106 @@ app.post('/api/v1/kyc/submit', (req: Request, res: Response) => {
   });
 });
 
-app.post('/api/v1/kyc/review', (req: Request, res: Response) => {
+app.post('/api/v1/kyc/review/', (req: Request, res: Response) => {
   const { action, username, reason } = req.body;
   res.json({
     status: "SUCCESS",
     new_status: action,
     unique_id: "FC-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    signature: "SIG-KYC-REV-" + Math.random().toString(10).substring(2, 6),
     reason: action === 'REJECT' ? reason : undefined
   });
 });
 
 // --- Land & Fraud ---
-app.post('/api/v1/land/signal', (req: Request, res: Response) => {
-  const { parcel_id, cadastral_id, reason } = req.body;
-  const p = parcels.find(x => x.parcelId === parcel_id || (cadastral_id && x.cadastralId === cadastral_id));
-  if (p) {
-    p.status = "EN_LITIGE";
-    (p as any).land_type = "Litige";
-    return res.json({ status: "SUCCESS", message: "Parcelle passée en Litige.", parcel_id: p.parcelId });
-  }
-  res.status(404).json({ error: "Parcelle non trouvée pour signalement." });
-});
-
-// --- NEW IBIVI / FANCIERCHAIN 2026 WORKFLOW ENDPOINTS ---
-
-app.post('/api/v1/land/escrow/open', (req: Request, res: Response) => {
-  const { land_id, amount } = req.body;
+app.post('/api/v1/land/signal-fraud/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
-    p.status = "ESCROW_OPENED";
-    (p as any).escrow_amount = amount;
-    (p as any).escrow_opened_at = new Date().toISOString();
-    return res.json({ 
-      status: "SUCCESS", 
-      message: "Séquestre ouvert. Fonds bloqués sur la Blockchain.",
-      escrow_id: "ESC-" + Math.random().toString(36).substring(2, 8).toUpperCase()
-    });
+    p.status = "LITIGE";
+    return res.json({ status: "SUCCESS", message: "Alerte fraude enregistrée. Parcelle gelée." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.post('/api/v1/land/oppose', (req: Request, res: Response) => {
-  const { land_id, reason, proof_hash } = req.body;
+app.post('/api/v1/land/draft/', (req: Request, res: Response) => {
+  const { parcelId } = req.body;
+  if (parcels.find(p => p.parcelId === parcelId)) {
+    return res.status(409).json({ status: "FAILED", message: "Double attribution rejetée." });
+  }
+  const newParcel = { ...req.body, status: "PENDING_CONTROL" };
+  parcels.push(newParcel);
+  res.status(201).json({ status: "SUCCESS", parcel_id: parcelId });
+});
+
+app.post('/api/v1/land/verify-survey/', (req: Request, res: Response) => {
+  const { land_id, action } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
-    p.status = "FROZEN_OPPOSITION";
-    (p as any).opposition_reason = reason;
-    (p as any).opposition_proof = proof_hash;
-    return res.json({ status: "SUCCESS", message: "Opposition enregistrée. Vente gelée pour arbitrage." });
+    p.status = action === 'APPROVE' ? "DRAFT" : "LITIGE";
+    return res.json({ status: "SUCCESS", message: "Levé géométrique approuvé." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.get('/api/v1/land/performance-audit', (req: Request, res: Response) => {
-  res.json({
-    avg_response_time_days: {
-      chef_quartier: 4.2,
-      mairie: 7.5,
-      cadastre: 3.1
-    },
-    efficiency_score: 94.5,
-    bottlenecks: ["Mairie de Talangaï", "Cadastre Pointe-Noire Zone B"],
-    total_escrows_active: 142
-  });
-});
-
-app.post('/api/v1/land/local-advice', (req: Request, res: Response) => {
-  const { land_id, comment, action } = req.body; // action: APPROVE or REJECT
+app.post('/api/v1/land/local-advice/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
-    if (action === 'APPROVE') {
-      p.status = "PENDING_OPPOSITION"; // Move to public opposition phase
-      (p as any).local_advice_at = new Date().toISOString();
-    } else {
-      p.status = "EN_LITIGE";
-    }
-    return res.json({ status: "SUCCESS", message: "Avis local enregistré. Début de la période de vacance (30j)." });
+    p.status = "COMMUNITY_VALIDATED";
+    return res.json({ status: "SUCCESS", message: "Avis local et signature enregistrés." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.post('/api/v1/land/notary-validate', (req: Request, res: Response) => {
-  const { land_id, signature } = req.body;
+app.post('/api/v1/land/notary-validate/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
     p.status = "NOTARY_VALIDATED";
-    (p as any).notary_signature = signature;
-    return res.json({ status: "SUCCESS", message: "Validation notaire effectuée." });
+    return res.json({ status: "SUCCESS", message: "Validation Notaire effectuée." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.post('/api/v1/land/ministry-approve', (req: Request, res: Response) => {
-  const { land_id, signature } = req.body;
+app.post('/api/v1/land/ministry-approve/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
     p.status = "FINALIZED";
-    (p as any).ministry_signature = signature;
-    p.workflowStep = 3;
-    return res.json({ status: "SUCCESS", message: "Approbation ministérielle finale. NFT généré.", txId: "0x" + Math.random().toString(16).slice(2) });
+    return res.json({ status: "SUCCESS", message: "Titre foncier numérique approuvé et NFT généré.", nft_id: land_id });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.post('/api/v1/land/heritage-notify', (req: Request, res: Response) => {
-  const { land_id, death_cert_id } = req.body;
+app.post('/api/v1/land/list-sale/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
+  const p = parcels.find(x => x.parcelId === land_id);
+  if (p && p.status === 'FINALIZED') {
+    p.status = "ON_SALE";
+    return res.json({ status: "SUCCESS", message: "Parcelle mise en vente." });
+  }
+  res.status(400).json({ error: "Vente impossible (Vérifiez le statut FINALIZED)." });
+});
+
+app.post('/api/v1/land/execute-sale/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
-    p.status = "BLOCKED_FOR_HERITAGE";
-    (p as any).death_cert_id = death_cert_id;
-    return res.json({ status: "SUCCESS", message: "Parcelle bloquée pour succession." });
+    p.status = "SALE_PENDING";
+    return res.json({ status: "SUCCESS", message: "Procédure de vente engagée. Attente Notaire." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
 });
 
-app.post('/api/v1/land/heritage-fragment', (req: Request, res: Response) => {
-  const { land_id, heirs } = req.body; // heirs: [{"name": "...", "share": 0.5}]
+app.post('/api/v1/land/heritage-setup/', (req: Request, res: Response) => {
+  const { land_id } = req.body;
   const p = parcels.find(x => x.parcelId === land_id);
   if (p) {
-    // In a real scenario, we would split into multiple records
-    p.status = "FINALIZED";
-    (p as any).heirs_info = heirs;
-    p.owner = "Indivision: " + heirs.map((h: any) => h.name).join(", ");
-    return res.json({ status: "SUCCESS", message: "Fragmentation effectuée." });
+    p.status = "HERITAGE";
+    return res.json({ status: "SUCCESS", message: "Succession anticipée enregistrée." });
   }
   res.status(404).json({ error: "Parcelle non trouvée." });
-});
-
-app.post('/api/v1/land/approve-draft', (req: Request, res: Response) => {
-  const { parcel_id, action } = req.body;
-  const p = parcels.find(x => x.parcelId === parcel_id);
-  if (p) {
-    if (action === 'APPROVE') {
-      p.status = "COMMUNITY_VALIDATED";
-    } else {
-      parcels = parcels.filter(x => x.parcelId !== parcel_id);
-    }
-    return res.json({ status: "SUCCESS" });
-  }
-  res.status(404).json({ error: "Draft non trouvé." });
 });
 
 app.get('/api/v1/geo/congo', (req: Request, res: Response) => {
@@ -363,38 +353,6 @@ app.patch('/api/v1/support/tickets/:ticket_id', (req: Request, res: Response) =>
   res.json({ status: "SUCCESS", ticket_id: req.params.ticket_id, new_status: status });
 });
 
-// --- Land Workflow ---
-app.post('/api/v1/land/draft', (req: Request, res: Response) => {
-  const { parcelId } = req.body;
-  if (parcels.find(p => p.parcelId === parcelId)) {
-    return res.status(409).json({ status: "FAILED", message: "DOUBLE ATTRIBUTION REJETÉE", conflict: "parcel_id" });
-  }
-  const newParcel = { ...req.body, status: "DRAFT" };
-  parcels.push(newParcel);
-  res.status(201).json({ status: "SUCCESS", txId: "0x" + Math.random().toString(16).slice(2), id: parcelId });
-});
-
-app.patch('/api/v1/land/validate', (req: Request, res: Response) => {
-  const { land_id } = req.body;
-  const p = parcels.find(x => x.parcelId === land_id);
-  if (p) p.status = "COMMUNITY_VALIDATED";
-  res.json({ status: "SUCCESS", message: "Validated successfully" });
-});
-
-app.patch('/api/v1/land/finalize', (req: Request, res: Response) => {
-  const { land_id } = req.body;
-  const p = parcels.find(x => x.parcelId === land_id);
-  if (p) p.status = "FINALIZED";
-  res.json({ status: "SUCCESS", message: "Land permanently anchored" });
-});
-
-app.post('/api/v1/land/mutate', (req: Request, res: Response) => {
-  const { land_id, new_owner_id } = req.body;
-  const p = parcels.find(x => x.parcelId === land_id);
-  if (p) p.owner = new_owner_id;
-  res.json({ status: "SUCCESS", message: "Ownership transferred" });
-});
-
 // --- Statistics ---
 app.get('/api/v1/stats', (req: Request, res: Response) => {
   res.json({
@@ -432,24 +390,20 @@ app.get('/api/v1/citizen/verify', (req: Request, res: Response) => {
     return res.status(404).json({ error: "Parcelle non trouvée" });
   }
   
-  const mapped = results.map(p => {
-    const ownerName = p.owner || "Inconnu";
-    const maskedOwner = ownerName.length > 2 
-      ? ownerName[0] + "*".repeat(ownerName.length - 2) + ownerName[ownerName.length - 1]
-      : ownerName;
+  const p = results[0];
+  const maskedOwner = (p.owner || "Inconnu").length > 2 
+      ? p.owner![0] + "*".repeat(p.owner!.length - 2) + p.owner![p.owner!.length - 1]
+      : p.owner;
       
-    return {
-      parcel_id: p.parcelId,
-      status: p.status,
-      owner: maskedOwner,
-      city: p.city,
-      neighborhood: p.neighborhood,
-      area: p.area,
-      cadastralId: p.cadastralId
-    };
+  res.json({
+    parcel_id: p.parcelId,
+    status: p.status,
+    owner: maskedOwner,
+    city: p.city,
+    neighborhood: p.neighborhood,
+    area: p.area,
+    cadastralId: p.cadastralId
   });
-  
-  res.json(mapped[0]); // Documentation says it returns a single object if land_id is specific
 });
 
 // --- Support ---

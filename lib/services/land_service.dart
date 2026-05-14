@@ -23,6 +23,9 @@ class AppUser {
   final String role;
   final String? photoURL;
   final bool isKYCVerified;
+  final String? kycStatus;
+  final String? signature;
+  final String? phone;
   final Map<String, dynamic>? kycData;
 
   AppUser({
@@ -32,6 +35,9 @@ class AppUser {
     required this.role,
     this.photoURL,
     this.isKYCVerified = false,
+    this.kycStatus,
+    this.signature,
+    this.phone,
     this.kycData,
   });
 }
@@ -364,16 +370,15 @@ class LandService with ChangeNotifier {
   }
 
   final Map<String, int> _statusColors = {
-    'DRAFT': 0xFFA9A9A9,
-    'ESCROW_OPENED': 0xFF00BFFF,
-    'PENDING_OPPOSITION': 0xFFFFD700,
-    'FROZEN_OPPOSITION': 0xFFB22222,
-    'LOCAL_ADVICE_GIVEN': 0xFF6495ED,
+    'PENDING_CONTROL': 0xFFA9A9A9,
+    'DRAFT': 0xFF6495ED,
     'COMMUNITY_VALIDATED': 0xFFDA70D6,
     'NOTARY_VALIDATED': 0xFF4169E1,
-    'FINALIZED': 0xFF228B22,
-    'EN_LITIGE': 0xFFFF4500,
-    'BLOCKED_FOR_HERITAGE': 0xFF8B0000,
+    'FINALIZED': 0xFF00963F,
+    'ON_SALE': 0xFF00BFFF,
+    'SALE_PENDING': 0xFFFFD700,
+    'HERITAGE': 0xFF8B0000,
+    'LITIGE': 0xFFFF4500,
   };
 
   final Map<String, int> _landTypeColors = {
@@ -383,7 +388,6 @@ class LandService with ChangeNotifier {
     'Agricole': 0xFF8B4513,
     'Minière': 0xFF708090,
     'Forestière': 0xFF006400,
-    'En Vente': 0xFF00BFFF,
   };
 
   int getLandColor(String? type, String? status) {
@@ -393,6 +397,21 @@ class LandService with ChangeNotifier {
     return _landTypeColors[type] ?? _landTypeColors['Cadastre']!;
   }
 
+  String getStatusLabel(String status) {
+    switch (status) {
+      case 'PENDING_CONTROL': return "Contrôle en attente";
+      case 'DRAFT': return "Levé technique / Brouillon";
+      case 'COMMUNITY_VALIDATED': return "Validation communautaire";
+      case 'NOTARY_VALIDATED': return "Validé par le Notaire";
+      case 'FINALIZED': return "Titre Foncier Définitif";
+      case 'ON_SALE': return "Mis en vente";
+      case 'SALE_PENDING': return "Procédure de vente";
+      case 'HERITAGE': return "Succession enregistrée";
+      case 'LITIGE': return "Litiges / Signalé";
+      default: return status.replaceAll('_', ' ');
+    }
+  }
+
   // --- IBIVI / FANCIERCHAIN 2026 WORKFLOW METHODS ---
 
   Future<void> openEscrow(String landId, double amount) async {
@@ -400,19 +419,7 @@ class LandService with ChangeNotifier {
     notifyListeners();
     try {
       final res = await ApiService.openEscrow(landId, amount);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur de séquestre");
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> submitOpposition(String landId, String reason, String proofHash) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.submitOpposition(landId, reason, proofHash);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur d'opposition");
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur de séquestre");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -424,7 +431,7 @@ class LandService with ChangeNotifier {
     notifyListeners();
     try {
       final res = await ApiService.giveLocalAdvice(landId, comment, action);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur d'avis local");
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur d'avis local");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -437,7 +444,7 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "NOTARY_VALIDATED");
       final res = await ApiService.notaryValidate(landId, signature);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur notaire");
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur notaire");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -450,161 +457,11 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "FINALIZED");
       final res = await ApiService.ministryApprove(landId, signature);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur ministérielle");
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur ministérielle");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> notifyHeritage(String landId, String deathCertId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.notifyHeritage(landId, deathCertId);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur notification héritage");
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> fragmentHeritage(String landId, List<Map<String, dynamic>> heirs) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.fragmentHeritage(landId, heirs);
-      if (res['status'] == 'FAILED') throw Exception(res['message'] ?? "Erreur fragmentation");
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> registerOwner({
-    required String username,
-    required String phone,
-    required String email,
-    required String password,
-    required String? idRecto,
-    required String? idVerso,
-  }) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.registerOwner({
-        'username': username,
-        'phone': phone,
-        'email': email,
-        'password': password,
-        'id_recto': idRecto,
-        'id_verso': idVerso,
-      });
-      if (res['status'] != 'PENDING') {
-        throw Exception(res['message'] ?? "Erreur lors de l'inscription");
-      }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> signalFraud(String? parcelId, String? cadastralId, String reason) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.signalFraud({
-        'parcel_id': parcelId,
-        'cadastral_id': cadastralId,
-        'reason': reason,
-      });
-      if (res['error'] != null) {
-        throw Exception(res['error']);
-      }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  LandService() {
-    // Initial check could be here if using local storage for tokens
-  }
-
-  Future<void> login(String username, String password) async {
-    try {
-      final res = await ApiService.login(username, password);
-      _isOffline = res['is_offline'] == true;
-      if (res.containsKey('token')) {
-        _currentUser = AppUser(
-          uid: 'UID-${res['user']?['id'] ?? '1'}',
-          email: '$username@foncierchain.cg',
-          displayName: username.toUpperCase(),
-          role: res['user']?['role'] ?? 'AGENT',
-        );
-        _userRole = _currentUser!.role;
-        notifyListeners();
-      } else {
-        throw Exception(res['error'] ?? "Identifiants invalides");
-      }
-    } catch (e) {
-      debugPrint("Erreur Auth: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> signOut() async {
-    _currentUser = null;
-    _userRole = 'CITIZEN';
-    _simulatedRole = null;
-    notifyListeners();
-  }
-
-  String generateSecureSignature(String parcelId, String targetStatus) {
-    // Requirements: SECURED-[HMAC_SHA256(parcelId:targetStatus, secret)]
-    final secret = "FONCIERCHAIN-SECRET-2026";
-    final data = "$parcelId:$targetStatus:$secret";
-    final bytes = utf8.encode(data);
-    final hash = sha256.convert(bytes).toString();
-    return "SECURED-$hash";
-  }
-
-  String? _lastSearchError;
-  String? get lastSearchError => _lastSearchError;
-
-  Future<List<Parcel>> searchParcels(String query) async {
-    _lastSearchError = null;
-    notifyListeners();
-    try {
-      final results = await ApiService.citizenVerify(query);
-      if (results is Map && results.containsKey('error')) {
-        _lastSearchError = results['error'];
-        notifyListeners();
-        return [];
-      }
-      if (results is List) {
-        return results.map((item) => Parcel.fromMap(item)).toList();
-      }
-      return [];
-    } catch (e) {
-      debugPrint("Erreur Search: $e");
-      _lastSearchError = "Une erreur est survenue lors de la recherche";
-      notifyListeners();
-      return [];
-    }
-  }
-
-  Future<List<TransactionHistory>> getHistory(String parcelId) async {
-    try {
-      final res = await ApiService.getLandHistory(parcelId);
-      final dynamic historyData = res['history'] ?? res['data'] ?? [];
-      if (historyData is List) {
-        return historyData.map((item) => TransactionHistory.fromMap(Map<String, dynamic>.from(item))).toList();
-      }
-    } catch (e) {
-      debugPrint("Erreur History: $e");
-    }
-    return [];
   }
 
   Future<void> initiateDraft({
@@ -643,8 +500,6 @@ class LandService with ChangeNotifier {
       if (response['status'] == 'FAILED') {
         throw Exception(response['message'] ?? "Erreur d'initiation");
       }
-
-      notifyListeners();
     } catch (e) {
       debugPrint("Erreur Draft: $e");
       rethrow;
@@ -654,66 +509,143 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<void> validateCommunity(String parcelId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final signature = generateSecureSignature(parcelId, "COMMUNITY_VALIDATED");
-      final response = await ApiService.validateLand(parcelId, signature);
-      if (response['status'] == 'FAILED') {
-        throw Exception(response['message'] ?? "Erreur de validation");
-      }
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Erreur Validation: $e");
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> finalizeLand(String parcelId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final signature = generateSecureSignature(parcelId, "FINALIZED");
-      final response = await ApiService.finalizeLand(parcelId, signature);
-      if (response['status'] == 'FAILED') {
-        throw Exception(response['message'] ?? "Erreur de finalisation");
-      }
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Erreur Finalisation: $e");
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> transferProperty(String parcelId, String newOwnerId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final res = await ApiService.mutateLand(parcelId, newOwnerId);
-      if (res['status'] == 'FAILED') {
-        throw Exception(res['message'] ?? "Erreur de mutation");
-      }
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> reportDispute(String parcelId, String reason) async {
+  Future<void> reportDispute(String landId, String reason) async {
     if (_currentUser == null) return;
     _isLoading = true;
     notifyListeners();
     try {
-      final res = await ApiService.reportDispute(parcelId, reason, _currentUser!.uid);
-      if (res['status'] == 'FAILED') {
-        throw Exception(res['message'] ?? "Erreur lors du signalement");
+      final res = await ApiService.signalFraud({
+        'land_id': landId,
+        'reason': reason,
+        'reporter_id': _currentUser!.uid,
+      });
+      if (res['status'] == 'FAILED' || res.containsKey('error')) {
+        throw Exception(res['message'] ?? res['error'] ?? "Erreur lors du signalement");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> login(String username, String password) async {
+    try {
+      final res = await ApiService.login(username, password);
+      _isOffline = res['is_offline'] == true;
+      if (res['status'] == 'SUCCESS' && res.containsKey('token')) {
+        final userData = res['user'];
+        _currentUser = AppUser(
+          uid: userData['unique_id'] ?? 'UID-${userData['id'] ?? '1'}',
+          email: userData['email'] ?? '$username@foncierchain.cg',
+          displayName: (userData['username'] ?? username).toString().toUpperCase(),
+          role: userData['role'] ?? 'AGENT',
+          signature: userData['signature'],
+          kycStatus: userData['kyc_status'],
+          isKYCVerified: userData['kyc_status'] == 'APPROVED',
+        );
+        _userRole = _currentUser!.role;
+        notifyListeners();
+      } else {
+        throw Exception(res['error'] ?? "Identifiants invalides");
+      }
+    } catch (e) {
+      debugPrint("Erreur Auth: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    _currentUser = null;
+    _userRole = 'CITIZEN';
+    _simulatedRole = null;
+    notifyListeners();
+  }
+
+  String generateSecureSignature(String parcelId, String targetStatus) {
+    final secret = "FONCIERCHAIN-SECRET-2026";
+    final data = "$parcelId:$targetStatus:$secret";
+    final bytes = utf8.encode(data);
+    final hash = sha256.convert(bytes).toString();
+    return "SECURED-$hash";
+  }
+
+  String? _lastSearchError;
+  String? get lastSearchError => _lastSearchError;
+
+  Future<List<Parcel>> searchParcels(String query) async {
+    _lastSearchError = null;
+    notifyListeners();
+    try {
+      final results = await ApiService.citizenVerify(query);
+      if (results is Map && results.containsKey('error')) {
+        _lastSearchError = results['error'];
+        notifyListeners();
+        return [];
+      }
+      if (results is Map) {
+        return [Parcel.fromMap(Map<String, dynamic>.from(results))];
+      }
+      if (results is List) {
+        return results.map((item) => Parcel.fromMap(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Erreur Search: $e");
+      _lastSearchError = "Une erreur est survenue lors de la recherche";
+      notifyListeners();
+      return [];
+    }
+  }
+
+  Future<void> registerOwner({
+    required String username,
+    required String phone,
+    required String email,
+    required String password,
+    required String? idRecto,
+    required String? idVerso,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.registerOwner({
+        'username': username,
+        'first_name': username, // Simplified for now
+        'last_name': '',
+        'phone': phone,
+        'email': email,
+        'password': password,
+        'id_recto': idRecto,
+        'id_verso': idVerso,
+      });
+      if (res['status'] != 'SUCCESS') {
+        throw Exception(res['message'] ?? "Erreur lors de l'inscription");
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> notifyHeritage(String landId, String deathCertId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.notifyHeritage(landId, deathCertId);
+      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur notification héritage");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> transferProperty(String landId, String newOwnerId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.mutateLand(landId, newOwnerId);
+      if (res['status'] == 'FAILED' || res.containsKey('error')) {
+        throw Exception(res['message'] ?? res['error'] ?? "Erreur de mutation");
       }
     } finally {
       _isLoading = false;

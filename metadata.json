@@ -1,13 +1,15 @@
 {
   "name": "FoncierChain",
-  "description": "Système National de Gestion Foncière pour la vérification instantanée et sécurisée de la propriété des terrains à Brazzaville.",
+  "description": "Système National de Gestion Foncière immuable (2026). Incorpore le KYC IA et le flux de validation multicouche (Communauté, Notaire, Ministère) pour éradiquer les fraudes à Brazzaville.",
   "requestFramePermissions": [
-    "geolocation"
+    "geolocation",
+    "camera"
   ],
   "majorCapabilities": [
-    "Transparency through FoncierChain protocol",
-    "Real-time Land Registry Search",
-    "Interactive Parcel Mapping",
-    "Secure Digital Certificates"
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API",
+    "AI-powered OCR for identity verification",
+    "Multi-role validation workflow (Chef de quartier, Notaire, Ministre)",
+    "Blockchain-ready digital land certificates",
+    "Fraud reporting and automated litigations tracking"
   ]
 }

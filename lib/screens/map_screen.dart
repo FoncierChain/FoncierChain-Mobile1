@@ -143,7 +143,10 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   child: Center(
                     child: Icon(
-                      data['status'] == "FINALIZED" ? Icons.verified : (data['status'] == "LITIGE" ? Icons.warning : Icons.location_on),
+                      data['status'] == "FINALIZED" ? Icons.verified : 
+                      (data['status'] == "LITIGE" ? Icons.warning_amber_rounded : 
+                      (data['status'] == "ON_SALE" ? Icons.shopping_cart_outlined : 
+                      (data['status'] == "HERITAGE" ? Icons.family_restroom : Icons.location_on))),
                       color: Colors.white,
                       size: 18,
                     ),
@@ -425,7 +428,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "STATUT: ${_selectedParcel!.status.replaceAll('_', ' ')}",
+                        "STATUT: ${Provider.of<LandService>(context, listen: false).getStatusLabel(_selectedParcel!.status).toUpperCase()}",
                         style: TextStyle(
                           color: _getStatusColor(_selectedParcel!.status), 
                           fontSize: 10, 
