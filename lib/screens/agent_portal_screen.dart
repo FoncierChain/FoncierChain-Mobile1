@@ -823,62 +823,96 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     final usernameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
+    final phoneController = TextEditingController();
+    final districtController = TextEditingController();
     String selectedRole = 'GEOMETRE';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
-        title: const Text("Créer un Compte Officiel"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogField(usernameController, "Nom d'utilisateur", isDark),
-            _buildDialogField(emailController, "Email", isDark),
-            _buildDialogField(passwordController, "Mot de passe", isDark, obscure: true),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: selectedRole,
-              items: [
-                'MINISTRE', 'SURVEYOR', 'CHEF_QUARTIER', 'NOTAIRE', 
-                'HEAD_OF_CADASTRAL_OFFICE', 'KYC_AGENT', 'LAND_CONTROL_OFFICER'
-              ].map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 12)))).toList(),
-              onChanged: (v) => selectedRole = v!,
-              decoration: InputDecoration(
-                labelText: "Rôle institutionnel",
-                labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
-                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+          title: Row(
+            children: [
+              const Icon(Icons.person_add_outlined, color: Color(0xFF00963F)),
+              const SizedBox(width: 12),
+              const Text("Créer un Compte Officiel"),
+            ],
+          ),
+          content: SizedBox(
+            width: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Ce formulaire permet à l'Admin d'enrôler des agents institutionnels directement sur le Ledger.", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  const SizedBox(height: 20),
+                  _buildDialogField(usernameController, "Nom d'utilisateur", isDark),
+                  _buildDialogField(emailController, "Email Institutionnel", isDark),
+                  _buildDialogField(passwordController, "Mot de passe temporaire", isDark, obscure: true),
+                  _buildDialogField(phoneController, "Téléphone", isDark, isNumber: true),
+                  _buildDialogField(districtController, "District d'Affectation", isDark),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    dropdownColor: isDark ? const Color(0xFF161B22) : Colors.white,
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13),
+                    items: [
+                      'MINISTRE', 'SURVEYOR', 'CHEF_QUARTIER', 'NOTAIRE', 
+                      'HEAD_OF_CADASTRAL_OFFICE', 'KYC_AGENT', 'LAND_CONTROL_OFFICER'
+                    ].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    onChanged: (v) => setDialogState(() => selectedRole = v!),
+                    decoration: InputDecoration(
+                      labelText: "Rôle institutionnel",
+                      labelStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+                      filled: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              child: Text("ANNULER", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38))
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00963F),
+                minimumSize: const Size(120, 48),
+              ),
+              onPressed: () async {
+                if (usernameController.text.isEmpty || emailController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Veuillez remplir les informations de base.")));
+                  return;
+                }
+                try {
+                  final data = {
+                    'username': usernameController.text.trim(),
+                    'email': emailController.text.trim(),
+                    'password': passwordController.text.trim(),
+                    'role': selectedRole,
+                    'phone': phoneController.text.trim(),
+                    'district': districtController.text.trim(),
+                    'status': 'APPROVED',
+                  };
+                  final res = await ApiService.registerOfficial(data);
+                  if (res['status'] == 'SUCCESS') {
+                     Navigator.pop(context);
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Compte officiel créé avec succès. Accès activé.")));
+                  } else {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? "Erreur lors de la création"), backgroundColor: Colors.red));
+                  }
+                } catch (e) {
+                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur système: $e"), backgroundColor: Colors.red));
+                }
+              }, 
+              child: const Text("CRÉER LE COMPTE")),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final data = {
-                  'username': usernameController.text,
-                  'email': emailController.text,
-                  'password': passwordController.text,
-                  'role': selectedRole,
-                  'status': 'APPROVED', // Officials are pre-approved by Admin
-                };
-                final res = await ApiService.registerOfficial(data);
-                if (res['status'] == 'SUCCESS') {
-                   Navigator.pop(context);
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Compte officiel créé avec succès.")));
-                } else {
-                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? "Erreur lors de la création")));
-                }
-              } catch (e) {
-                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$e")));
-              }
-            }, 
-            child: const Text("CRÉER LE COMPTE")),
-        ],
       ),
     );
   }
@@ -2197,17 +2231,17 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       [
         Row(
           children: [
-            Expanded(child: _buildAdminLargeAction(Icons.people_alt, "Utilisateurs", Colors.blue, isDark)),
+            Expanded(child: _buildAdminLargeAction(Icons.people_alt, "Utilisateurs", Colors.blue, isDark, onTap: () => _showCreateOfficialDialog(context, isDark))),
             const SizedBox(width: 12),
-            Expanded(child: _buildAdminLargeAction(Icons.settings_suggest, "Système", Colors.grey, isDark)),
+            Expanded(child: _buildAdminLargeAction(Icons.settings_suggest, "Système", Colors.grey, isDark, onTap: () => _showActionComingSoon(context, "Configurations Système"))),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _buildAdminLargeAction(Icons.analytics, "Logs Blockchain", Colors.purple, isDark)),
+            Expanded(child: _buildAdminLargeAction(Icons.analytics, "Logs Blockchain", Colors.purple, isDark, onTap: () => _showActionComingSoon(context, "Explorateur Blockchain"))),
             const SizedBox(width: 12),
-            Expanded(child: _buildAdminLargeAction(Icons.backup, "Sauvegarde", Colors.green, isDark)),
+            Expanded(child: _buildAdminLargeAction(Icons.backup, "Sauvegarde", Colors.green, isDark, onTap: () => _showActionComingSoon(context, "Backup & Recovery"))),
           ],
         ),
       ],
@@ -2215,20 +2249,24 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
-  Widget _buildAdminLargeAction(IconData icon, String label, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-        ],
+  Widget _buildAdminLargeAction(IconData icon, String label, Color color, bool isDark, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
       ),
     );
   }

@@ -723,6 +723,16 @@ class LandService with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> getReports() async {
+    try {
+      final res = await ApiService.getReports();
+      return res;
+    } catch (e) {
+      debugPrint("Reports error: $e");
+    }
+    return {};
+  }
+
   Future<void> refreshAll() async {
     _isLoading = true;
     notifyListeners();

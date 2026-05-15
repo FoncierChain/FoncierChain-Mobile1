@@ -254,6 +254,43 @@ class _MapScreenState extends State<MapScreen> {
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15)],
               ),
               child: TextField(
+                onSubmitted: (value) async {
+                  if (value.isEmpty) return;
+                  final service = Provider.of<LandService>(context, listen: false);
+                  setState(() => _isLoading = true);
+                  final results = await service.searchParcels(value);
+                  setState(() => _isLoading = false);
+                  if (results.isNotEmpty) {
+                    final p = results.first;
+                    // If the parcel has a single lat/lng
+                    final lat = p.coordinates != null && p.coordinates!.isNotEmpty 
+                        ? p.coordinates!.first.latitude 
+                        : (p.address.contains(',') ? -4.26 : -4.26); // Fallback logic
+                    
+                    // Actually, let's find it in _mapData for better visual move
+                    final parcelInData = _mapData.firstWhere(
+                      (d) => d['parcelId'] == p.id || d['cadastralId'] == p.id || d['id'].toString() == p.id,
+                      orElse: () => null,
+                    );
+                    
+                    if (parcelInData != null) {
+                      final lat = (parcelInData['lat'] as num).toDouble();
+                      final lng = (parcelInData['lng'] as num).toDouble();
+                      _mapController.move(LatLng(lat, lng), 17.0);
+                      setState(() {
+                        _selectedParcel = Parcel.fromMap(parcelInData);
+                      });
+                    } else {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text("Parcelle trouvée mais non affichée sur la carte actuelle."))
+                       );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Aucune parcelle trouvée pour cet ID."))
+                    );
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: "Rechercher une zone, un ID...",
                   prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
