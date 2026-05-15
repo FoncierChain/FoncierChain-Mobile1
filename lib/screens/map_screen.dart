@@ -74,7 +74,7 @@ class _MapScreenState extends State<MapScreen> {
         return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
       case MapLayerType.street:
       default:
-        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     }
   }
 
@@ -93,7 +93,7 @@ class _MapScreenState extends State<MapScreen> {
       children: [
         TileLayer(
           urlTemplate: _getTileUrl(currentMapType),
-          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.foncierchain.app',
         ),
         PolygonLayer(
           polygons: [
@@ -106,10 +106,12 @@ class _MapScreenState extends State<MapScreen> {
               label: z.name,
               labelStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
             )),
-            ..._mapData.where((data) => data['coords'] != null).map((data) {
-              final List<dynamic> coords = data['coords'];
+            ..._mapData.where((data) => data['coordinates'] != null).map((data) {
+              final List<dynamic> coords = data['coordinates'];
               final List<LatLng> points = coords.map((c) => LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
-              final colorValue = service.getLandColor(data['land_type'], data['status']);
+              // In the new data, land_type might be missing in some parcels, defaulting to "Cadastre"
+              final landType = data['land_type'] ?? (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
+              final colorValue = service.getLandColor(landType, data['status']);
               
               return Polygon(
                 points: points,
@@ -125,6 +127,7 @@ class _MapScreenState extends State<MapScreen> {
           markers: _mapData.map((data) {
             final lat = (data['lat'] as num).toDouble();
             final lng = (data['lng'] as num).toDouble();
+            final landType = data['land_type'] ?? (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
             return Marker(
               point: LatLng(lat, lng),
               width: 40,
@@ -137,16 +140,16 @@ class _MapScreenState extends State<MapScreen> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Color(service.getLandColor(data['land_type'], data['status'])).withOpacity(0.35),
-                    border: Border.all(color: Color(service.getLandColor(data['land_type'], data['status'])), width: 2),
+                    color: Color(service.getLandColor(landType, data['status'])).withOpacity(0.35),
+                    border: Border.all(color: Color(service.getLandColor(landType, data['status'])), width: 2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Icon(
                       data['status'] == "FINALIZED" ? Icons.verified : 
-                      (data['status'] == "LITIGE" ? Icons.warning_amber_rounded : 
+                      (data['status'] == "LITIGE" || data['status'] == "EN_LITIGE" ? Icons.warning_amber_rounded : 
                       (data['status'] == "ON_SALE" ? Icons.shopping_cart_outlined : 
-                      (data['status'] == "HERITAGE" ? Icons.family_restroom : Icons.location_on))),
+                      (data['status'] == "HERITAGE" || data['status'] == "BLOCKED_FOR_HERITAGE" ? Icons.family_restroom : Icons.location_on))),
                       color: Colors.white,
                       size: 18,
                     ),

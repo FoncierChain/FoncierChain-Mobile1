@@ -22,6 +22,16 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  // Role-specific controllers
+  final TextEditingController _landIdController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _reasonController = TextEditingController();
+  final TextEditingController _idNumberController = TextEditingController();
+  final TextEditingController _areaController = TextEditingController();
+  final TextEditingController _neighborhoodController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -173,7 +183,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
         elevation: 0,
-        title: Text("Console Administrative", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
+        title: Text("Console: ${user.role}", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87)),
         actions: [
           IconButton(onPressed: _handleLogout, icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20)),
           const SizedBox(width: 16),
@@ -191,37 +201,136 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             if (service.isOffline) _buildOfflineBanner(isDark),
             _buildWelcomeHeader(user, isDark),
             const SizedBox(height: 24),
-            _buildSimulationConsole(service, isDark),
-            const SizedBox(height: 32),
-            _buildStatsSection(isDark),
+            _buildRoleDashboard(user, isDark),
             const SizedBox(height: 40),
-            _buildComplianceTable(isDark),
-            const SizedBox(height: 40),
-            _buildActionSection(isDark),
-            const SizedBox(height: 40),
-            _buildPerformanceAudit(isDark),
-            const SizedBox(height: 40),
-            _buildReportsSection(isDark),
-            const SizedBox(height: 40),
-            _buildConsensusMonitor(isDark),
-            const SizedBox(height: 40),
-            _buildRecentOpsSection(isDark),
-            const SizedBox(height: 60),
-            Center(
-              child: Text(
-                "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
-                style: GoogleFonts.inter(
-                  color: isDark ? Colors.white12 : Colors.black12,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
+            _buildCommonSections(isDark),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCommonSections(bool isDark) {
+    return Column(
+      children: [
+        _buildStatsSection(isDark),
+        const SizedBox(height: 40),
+        _buildPerformanceAudit(isDark),
+        const SizedBox(height: 40),
+        _buildReportsSection(isDark),
+        const SizedBox(height: 40),
+        _buildConsensusMonitor(isDark),
+        const SizedBox(height: 40),
+        _buildRecentOpsSection(isDark),
+        const SizedBox(height: 60),
+        Center(
+          child: Text(
+            "DÉVELOPPÉ PAR AFRICHAIN SOLUTION",
+            style: GoogleFonts.inter(
+              color: isDark ? Colors.white12 : Colors.black12,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  Widget _buildRoleDashboard(AppUser user, bool isDark) {
+    switch (user.role) {
+      case 'SURVEYOR':
+        return _buildSurveyorConsole(isDark);
+      case 'LAND_CONTROL_OFFICER':
+        return _buildControlOfficerConsole(isDark);
+      case 'NEIGHBORHOOD_CHIEF':
+      case 'BLOC_CHIEF':
+      case 'VILLAGE_CHIEF':
+        return _buildChiefConsole(isDark);
+      case 'HEAD_OF_CADASTRAL_OFFICE':
+        return _buildCadastreChefConsole(isDark);
+      case 'MINISTRY_OF_LAND_AFFAIRS':
+        return _buildMinistryConsole(isDark);
+      case 'KYC_AGENT':
+        return _buildKYCAgentConsole(isDark);
+      case 'TICKET_AGENT':
+      case 'CUSTOMER_SUPPORT_AGENT':
+        return _buildSupportConsole(isDark);
+      case 'HEIR':
+        return _buildHeirConsole(isDark);
+      case 'CITIZEN':
+      case 'OWNER':
+        return _buildCitizenConsole(isDark);
+      case 'ADMIN':
+        return _buildAdminConsole(isDark);
+      default:
+        return _buildStandardDashboard(isDark);
+    }
+  }
+
+  Widget _buildHeirConsole(bool isDark) {
+    return _buildCard(
+      "SUCCESSION - RÉCLAMATION D'HÉRITAGE",
+      [
+        const Text("Soumission de dossier pour succession foncière.", style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 20),
+        _buildSimpleField(_landIdController, "Parcelle du défunt", Icons.home, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_commentController, "Lien de parenté", Icons.family_restroom, isDark),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.cloud_upload_outlined),
+          label: const Text("TÉLÉVERSER DOCUMENTS"),
+          style: _btnStyle(Colors.brown),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildCitizenConsole(bool isDark) {
+    return _buildCard(
+      "ESPACE CITOYEN - SUIVI & SIGNALEMENT",
+      [
+        _buildSimpleField(_landIdController, "N° Dossier", Icons.track_changes, isDark),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.search),
+          label: const Text("VOIR L'ÉTAT D'AVANCEMENT"),
+          style: _btnStyle(const Color(0xFF00963F)),
+        ),
+        const SizedBox(height: 24),
+        const Divider(),
+        const SizedBox(height: 12),
+        const Text("SIGNALER UNE OCCUPATION ILLÉGALE", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 11)),
+        const SizedBox(height: 12),
+        _buildSimpleField(_commentController, "Description du problème", Icons.warning_amber, isDark),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.report_problem),
+          label: const Text("SIGNER UN SIGNALEMENT"),
+          style: _btnStyle(Colors.redAccent),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildStandardDashboard(bool isDark) {
+    final service = Provider.of<LandService>(context);
+    return Column(
+      children: [
+        _buildSimulationConsole(service, isDark),
+        const SizedBox(height: 32),
+        _buildComplianceTable(isDark),
+        const SizedBox(height: 32),
+        _buildActionSection(isDark),
+      ],
     );
   }
 
@@ -294,36 +403,38 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("SIGNALEMENTS DE FRAUDE RÉCENTS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        Text("SIGNALEMENTS ET AUDITS RÉCENTS", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
         const SizedBox(height: 16),
-        FutureBuilder<List<Map<String, dynamic>>>(
+        FutureBuilder<Map<String, dynamic>>(
           future: service.getReports(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            final reports = snapshot.data!;
-            if (reports.isEmpty) return const Text("Aucun signalement actif.");
+            final data = snapshot.data!;
+            final auditLogs = data['audit_logs'] as List<dynamic>? ?? [];
+            
+            if (auditLogs.isEmpty) return const Text("Aucun audit actif.");
             
             return Container(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF161B22) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: reports.length,
+                itemCount: auditLogs.length,
                 separatorBuilder: (context, index) => Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12),
                 itemBuilder: (context, index) {
-                  final report = reports[index];
+                  final log = auditLogs[index];
                   return ListTile(
-                    leading: const Icon(Icons.report_problem, color: Colors.redAccent),
-                    title: Text("ID: ${report['id']} - Parcelle ${report['parcelId']}", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
-                    subtitle: Text("Rapporté par: ${report['reporter']} le ${report['date']}", style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 11)),
-                    trailing: TextButton(
-                      onPressed: () {},
-                      child: const Text("DÉTAILS", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    leading: Icon(
+                      log['action'] == 'CREATE' ? Icons.add_circle_outline : Icons.edit_note, 
+                      color: log['status'] == 'SUCCESS' ? Colors.green : Colors.redAccent
                     ),
+                    title: Text("Action: ${log['action']} - Entité ${log['entity']}", style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text("Agent: ${log['agent']} - ${log['timestamp']}\n${log['details']}", style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 11)),
+                    trailing: Text(log['status'] ?? "", style: TextStyle(color: log['status'] == 'SUCCESS' ? Colors.green : Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
                   );
                 },
               ),
@@ -512,6 +623,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
   }
 
   Widget _buildComplianceTable(bool isDark) {
+    final service = Provider.of<LandService>(context, listen: false);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -533,10 +645,22 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             ),
           ),
           _buildTableHeader(isDark),
-          _buildTableRow("Ouenzé", "1,240", "98.2%", true, isDark),
-          _buildTableRow("Talangaï", "2,150", "95.5%", true, isDark),
-          _buildTableRow("Poto-Poto", "890", "99.1%", true, isDark),
-          _buildTableRow("Moungali", "1,420", "82.4%", false, isDark),
+          FutureBuilder<Map<String, dynamic>>(
+            future: service.getReports(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const LinearProgressIndicator();
+              final districts = snapshot.data!['districts'] as List<dynamic>? ?? [];
+              return Column(
+                children: districts.map((d) {
+                  final name = d['name'] ?? "Inconnu";
+                  final count = d['total']?.toString() ?? "0";
+                  final rate = "${d['validation_rate'] ?? 0}%";
+                  final isSafe = (d['validation_rate'] ?? 0) > 80;
+                  return _buildTableRow(name, count, rate, isSafe, isDark);
+                }).toList(),
+              );
+            },
+          ),
           const SizedBox(height: 12),
         ],
       ),
@@ -1349,7 +1473,18 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     final priceController = TextEditingController();
     
     LatLng selectedPoint = LatLng(-4.2634, 15.2832);
+    List<LatLng> polygonPoints = [selectedPoint];
     final MapController mapController = MapController();
+
+    void updatePointsFromText(int index, String latStr, String lngStr) {
+      double? lat = double.tryParse(latStr);
+      double? lng = double.tryParse(lngStr);
+      if (lat != null && lng != null) {
+        setDialogState(() {
+          polygonPoints[index] = LatLng(lat, lng);
+        });
+      }
+    }
 
     String generateHash() {
       final input = "${idController.text}${cadastralController.text}${ownerIdController.text}${DateTime.now().millisecondsSinceEpoch}";
@@ -1490,33 +1625,61 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                                     ),
                                   );
                                 } else {
-                                  setDialogState(() => selectedPoint = p);
+                                  setDialogState(() {
+                                    if (polygonPoints.length == 1 && polygonPoints[0] == selectedPoint) {
+                                      polygonPoints = [p];
+                                    } else {
+                                      polygonPoints.add(p);
+                                    }
+                                    selectedPoint = p;
+                                  });
                                 }
                               },
                             ),
                             children: [
                               TileLayer(
                                 urlTemplate: getTileUrl(currentMapType),
-                                subdomains: const ['a', 'b', 'c'],
+                                userAgentPackageName: 'com.foncierchain.app',
                               ),
                               PolygonLayer(
-                                polygons: protectedZones.map((z) => Polygon(
-                                  points: z.polygon,
-                                  color: Colors.red.withOpacity(0.3),
-                                  borderColor: Colors.red,
-                                  borderStrokeWidth: 2,
-                                  isFilled: true,
-                                )).toList(),
+                                polygons: [
+                                  if (polygonPoints.length >= 3)
+                                    Polygon(
+                                      points: polygonPoints,
+                                      color: Colors.blue.withOpacity(0.3),
+                                      borderColor: Colors.blue,
+                                      borderStrokeWidth: 3,
+                                      isFilled: true,
+                                    ),
+                                  ...protectedZones.map((z) => Polygon(
+                                    points: z.polygon,
+                                    color: Colors.red.withOpacity(0.3),
+                                    borderColor: Colors.red,
+                                    borderStrokeWidth: 2,
+                                    isFilled: true,
+                                  )).toList(),
+                                ],
+                              ),
+                              PolylineLayer(
+                                polylines: [
+                                  if (polygonPoints.length > 1)
+                                    Polyline(
+                                      points: polygonPoints,
+                                      color: Colors.blue,
+                                      strokeWidth: 3,
+                                    ),
+                                ],
                               ),
                               MarkerLayer(
-                                markers: [
-                                  Marker(
-                                    point: selectedPoint,
-                                    width: 40,
-                                    height: 40,
-                                    child: const Icon(Icons.location_on, color: Color(0xFF00963F), size: 40),
+                                markers: polygonPoints.map((pt) => Marker(
+                                  point: pt,
+                                  width: 20,
+                                  height: 20,
+                                  child: Container(
+                                    decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                                    child: const Center(child: Icon(Icons.circle, color: Colors.white, size: 8)),
                                   ),
-                                ],
+                                )).toList(),
                               ),
                             ],
                           ),
@@ -1530,12 +1693,58 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                                 _buildMapTypeBtn(Icons.satellite_alt, MapLayerType.satellite, currentMapType, isDark, service),
                                 const SizedBox(height: 4),
                                 _buildMapTypeBtn(Icons.landscape, MapLayerType.terrain, currentMapType, isDark, service),
+                                const SizedBox(height: 8),
+                                FloatingActionButton.small(
+                                  onPressed: () => setDialogState(() => polygonPoints = []),
+                                  backgroundColor: Colors.redAccent,
+                                  child: const Icon(Icons.delete_sweep, size: 16),
+                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Manual Coordinates Entry
+                    Text("COORDONNÉES (LAT, LNG)", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 10, color: isDark ? Colors.white24 : Colors.black26, letterSpacing: 1)),
+                    const SizedBox(height: 8),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 150),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: polygonPoints.length,
+                        itemBuilder: (context, index) {
+                          final p = polygonPoints[index];
+                          final latCtrl = TextEditingController(text: p.latitude.toStringAsFixed(6));
+                          final lngCtrl = TextEditingController(text: p.longitude.toStringAsFixed(6));
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              children: [
+                                Expanded(child: _buildDialogField(latCtrl, "Lat ${index+1}", isDark, isNumber: true)),
+                                const SizedBox(width: 8),
+                                Expanded(child: _buildDialogField(lngCtrl, "Lng ${index+1}", isDark, isNumber: true)),
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),
+                                  onPressed: () => setDialogState(() => polygonPoints.removeAt(index)),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.save_outlined, color: Colors.green, size: 20),
+                                  onPressed: () => updatePointsFromText(index, latCtrl.text, lngCtrl.text),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (polygonPoints.length < 4)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text("Il manque ${4 - polygonPoints.length} point(s) pour un quadrilatère standard.", style: const TextStyle(color: Colors.orange, fontSize: 10)),
+                      ),
                     const SizedBox(height: 16),
 
                     _buildDialogField(cadastralController, "ID Cadastral", isDark),
@@ -1577,6 +1786,7 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
                       address: addressController.text.trim(),
                       signatureV2: "1",
                       documentHash: generateHash(), 
+                      coordinates: polygonPoints,
                       lat: selectedPoint.latitude,
                       lng: selectedPoint.longitude,
                     );
@@ -1792,7 +2002,265 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     );
   }
 
+  Widget _buildOpRow(String title, String status, String time, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white12 : Colors.black.withOpacity(0.03)),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.history, color: isDark ? Colors.white38 : Colors.black38, size: 16),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 2),
+              Text(time, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 11)),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: status == "Validé" ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(status.toUpperCase(), style: TextStyle(color: status == "Validé" ? Colors.green : Colors.orange, fontWeight: FontWeight.w900, fontSize: 9)),
+        ),
+      ],
+    );
+  }
+
+  // --- Role Specific Consoles ---
+
+  Widget _buildSurveyorConsole(bool isDark) {
+    return _buildCard(
+      "ZONE GÉOMÈTRE - NOUVELLE PARCELLE",
+      [
+        _buildSimpleField(_neighborhoodController, "Quartier", Icons.map, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_cityController, "Ville", Icons.location_city, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_areaController, "Surface (m²)", Icons.square_foot, isDark),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.add_location_alt_outlined),
+          label: const Text("INITIER LEVÉ GÉOMÉTRIQUE"),
+          style: _btnStyle(Colors.blueAccent),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildControlOfficerConsole(bool isDark) {
+    return _buildCard(
+      "CONTRÔLE TECHNIQUE FONCIER",
+      [
+        _buildSimpleField(_landIdController, "ID Parcelle à contrôler", Icons.search, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_commentController, "Notes de vérification", Icons.notes, isDark),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: ElevatedButton(onPressed: () {}, style: _btnStyle(Colors.green), child: const Text("APPROUVER"))),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(onPressed: () {}, style: _btnStyle(Colors.redAccent), child: const Text("REJETER"))),
+          ],
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildChiefConsole(bool isDark) {
+    return _buildCard(
+      "AVIS DU CHEF (VALIDATION COMMUNAUTAIRE)",
+      [
+        const Text("En tant que Chef local, vous témoignez de l'appartenance coutumière de cette terre.", style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 16),
+        _buildSimpleField(_landIdController, "Code Parcelle", Icons.qr_code, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_commentController, "Témoignage / Avis", Icons.comment, isDark),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.draw),
+          label: const Text("SIGNER L'AVIS LOCAL"),
+          style: _btnStyle(const Color(0xFF00963F)),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildCadastreChefConsole(bool isDark) {
+    return _buildCard(
+      "DIRECTION DU CADASTRE",
+      [
+        _buildSimpleField(_landIdController, "ID Dossier", Icons.folder_open, isDark),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.assignment_ind),
+          label: const Text("AFFECTER À UN GÉOMÈTRE"),
+          style: _btnStyle(Colors.deepPurpleAccent),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.check_circle_outline),
+          label: const Text("VALIDATION FINALE CADASTRE"),
+          style: _btnStyle(Colors.green),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildMinistryConsole(bool isDark) {
+    return _buildCard(
+      "MINISTÈRE DES AFFAIRES FONCIÈRES",
+      [
+        const Text("Génération et approbation des Titres Fonciers Immuables.", style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 20),
+        _buildSimpleField(_landIdController, "ID Certificat", Icons.verified_user, isDark),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.security),
+          label: const Text("APPROUVER ÉMISSION TITRE FONCIER"),
+          style: _btnStyle(const Color(0xFF00963F)),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildKYCAgentConsole(bool isDark) {
+    return _buildCard(
+      "VÉRIFICATION D'IDENTITÉ (KYC)",
+      [
+        _buildSimpleField(_usernameController, "Nom d'utilisateur", Icons.person, isDark),
+        const SizedBox(height: 12),
+        _buildSimpleField(_idNumberController, "N° Pièce d'identité", Icons.badge, isDark),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: ElevatedButton(onPressed: () {}, style: _btnStyle(Colors.green), child: const Text("VALIDER ID"))),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(onPressed: () {}, style: _btnStyle(Colors.redAccent), child: const Text("REFUSER"))),
+          ],
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildSupportConsole(bool isDark) {
+    return _buildCard(
+      "SUPPORT CLIENT & TICKETS",
+      [
+        const Text("Gestion des tickets d'assistance et signalements.", style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.support_agent),
+          label: const Text("VOIR LES TICKETS OUVERTS"),
+          style: _btnStyle(Colors.orange),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.chat_bubble_outline),
+          label: const Text("RÉPONDRE AU CHAT LIVE"),
+          style: _btnStyle(Colors.blue),
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildAdminConsole(bool isDark) {
+    return _buildCard(
+      "CONTRÔLE GLOBAL ADMIN",
+      [
+        Row(
+          children: [
+            Expanded(child: _buildAdminLargeAction(Icons.people_alt, "Utilisateurs", Colors.blue, isDark)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildAdminLargeAction(Icons.settings_suggest, "Système", Colors.grey, isDark)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildAdminLargeAction(Icons.analytics, "Logs Blockchain", Colors.purple, isDark)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildAdminLargeAction(Icons.backup, "Sauvegarde", Colors.green, isDark)),
+          ],
+        ),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildAdminLargeAction(IconData icon, String label, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 32),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(String title, List<Widget> children, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1, color: isDark ? Colors.white38 : Colors.black38)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161B22) : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  ButtonStyle _btnStyle(Color color) {
+    return ElevatedButton.styleFrom(
+      minimumSize: const Size(double.infinity, 54),
+      backgroundColor: color,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+    );
+  }
+
   Widget _buildRecentOpsSection(bool isDark) {
+    final service = Provider.of<LandService>(context, listen: false);
     final containerColor = isDark ? const Color(0xFF161B22) : Colors.white;
 
     return Container(
@@ -1814,53 +2282,32 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildOpRow("Mutation Parcelle BZV-457", "Validé", "Il y a 10 min", isDark),
-          Divider(height: 32, color: isDark ? Colors.white10 : Colors.black12),
-          _buildOpRow("Enregistrement Nouveau Titre", "Validé", "Il y a 2h", isDark),
-          Divider(height: 32, color: isDark ? Colors.white10 : Colors.black12),
-          _buildOpRow("Modification Propriétaire", "En attente", "Hier", isDark),
+          FutureBuilder<Map<String, dynamic>>(
+            future: service.getReports(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const LinearProgressIndicator();
+              final auditLogs = snapshot.data!['audit_logs'] as List<dynamic>? ?? [];
+              if (auditLogs.isEmpty) return const Text("Aucune opération récente.");
+              
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: auditLogs.length,
+                separatorBuilder: (context, index) => Divider(height: 32, color: isDark ? Colors.white10 : Colors.black12),
+                itemBuilder: (context, index) {
+                  final log = auditLogs[index];
+                  final title = "${log['action']} - ${log['entity'].toString().substring(0, 10)}...";
+                  final status = log['status'] == 'SUCCESS' ? "Validé" : "Échec";
+                  final time = log['timestamp'] ?? "";
+                  return _buildOpRow(title, status, time, isDark);
+                },
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOpRow(String title, String status, String time, bool isDark) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: (isDark ? Colors.white : Colors.black).withOpacity(0.05),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(Icons.history, size: 18, color: isDark ? Colors.white38 : Colors.black38),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-              Text(time, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 11)),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: status == "Validé" ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            status,
-            style: TextStyle(
-              color: status == "Validé" ? Colors.green : Colors.orange,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

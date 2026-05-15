@@ -67,6 +67,7 @@ class Parcel {
   final String? localAdvice;
   final String? documentHash;
   final String? txId;
+  final List<LatLng>? coordinates; // Added coordinates list
   final DateTime lastUpdate;
 
   Parcel({
@@ -94,10 +95,15 @@ class Parcel {
     this.localAdvice,
     this.documentHash,
     this.txId,
+    this.coordinates,
     required this.lastUpdate,
   });
 
   factory Parcel.fromMap(Map<String, dynamic> data) {
+    List<LatLng>? coords;
+    if (data['coordinates'] != null) {
+      coords = (data['coordinates'] as List).map((c) => LatLng(c[0].toDouble(), c[1].toDouble())).toList();
+    }
     return Parcel(
       id: data['parcelId'] ?? data['id']?.toString() ?? '',
       ownerName: data['owner'] ?? data['currentOwner'] ?? data['ownerName'] ?? '',
@@ -123,6 +129,7 @@ class Parcel {
       localAdvice: data['local_advice'],
       documentHash: data['hash'] ?? data['documentHash'],
       txId: data['txId'] ?? data['hash'],
+      coordinates: coords,
       lastUpdate: data['createdAt'] != null 
           ? DateTime.parse(data['createdAt']) 
           : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
@@ -475,6 +482,7 @@ class LandService with ChangeNotifier {
     required String address,
     required String signatureV2,
     required String documentHash,
+    List<LatLng>? coordinates,
     double? lat,
     double? lng,
   }) async {
@@ -492,8 +500,9 @@ class LandService with ChangeNotifier {
         'signatureV2': generateSecureSignature(parcelId, "DRAFT"),
         'documentHash': documentHash,
         'address': address,
-        'lat': lat ?? -4.26, 
-        'lng': lng ?? 15.28
+        'lat': lat ?? (coordinates != null && coordinates.isNotEmpty ? coordinates.first.latitude : -4.26), 
+        'lng': lng ?? (coordinates != null && coordinates.isNotEmpty ? coordinates.first.longitude : 15.28),
+        'coordinates': coordinates?.map((c) => [c.latitude, c.longitude]).toList(),
       });
       _isOffline = response['is_offline'] == true;
 
@@ -708,15 +717,13 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getReports() async {
+  Future<Map<String, dynamic>> getReports() async {
     try {
       final res = await ApiService.getReports();
-      if (res['alerts'] != null) {
-        return List<Map<String, dynamic>>.from(res['alerts']);
-      }
+      return res;
     } catch (e) {
       debugPrint("Reports error: $e");
     }
-    return [];
+    return {};
   }
 }
