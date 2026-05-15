@@ -185,6 +185,10 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
         elevation: 0,
         title: Text("Console: ${user.role}", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: isDark ? Colors.white : Colors.black87)),
         actions: [
+          IconButton(
+            onPressed: () => service.refreshAll(),
+            icon: Icon(Icons.refresh, color: isDark ? Colors.white70 : Colors.black54, size: 20),
+          ),
           IconButton(onPressed: _handleLogout, icon: const Icon(Icons.logout, color: Colors.redAccent, size: 20)),
           const SizedBox(width: 16),
         ],
@@ -1476,16 +1480,6 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
     List<LatLng> polygonPoints = [selectedPoint];
     final MapController mapController = MapController();
 
-    void updatePointsFromText(int index, String latStr, String lngStr) {
-      double? lat = double.tryParse(latStr);
-      double? lng = double.tryParse(lngStr);
-      if (lat != null && lng != null) {
-        setDialogState(() {
-          polygonPoints[index] = LatLng(lat, lng);
-        });
-      }
-    }
-
     String generateHash() {
       final input = "${idController.text}${cadastralController.text}${ownerIdController.text}${DateTime.now().millisecondsSinceEpoch}";
       return sha256.convert(utf8.encode(input)).toString();
@@ -1511,6 +1505,16 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
           final cities = service.congoGeoData;
           final protectedZones = service.protectedZones;
           final currentMapType = service.currentMapType;
+
+          void updatePointsFromText(int index, String latStr, String lngStr) {
+            double? lat = double.tryParse(latStr);
+            double? lng = double.tryParse(lngStr);
+            if (lat != null && lng != null) {
+              setDialogState(() {
+                polygonPoints[index] = LatLng(lat, lng);
+              });
+            }
+          }
 
           return AlertDialog(
             backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
@@ -2307,7 +2311,5 @@ class _AgentPortalScreenState extends State<AgentPortalScreen> {
         ],
       ),
     );
-  }
-
   }
 }

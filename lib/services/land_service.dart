@@ -369,7 +369,13 @@ class LandService with ChangeNotifier {
     if (searchQuery != null) {
       _pendingSearchQuery = searchQuery;
     }
-    notifyListeners();
+    
+    // Auto-refresh when entering the agent portal for real-time data
+    if (index == 4) { 
+      refreshAll();
+    } else {
+      notifyListeners();
+    }
   }
 
   void clearPendingSearch() {
@@ -717,13 +723,17 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> getReports() async {
+  Future<void> refreshAll() async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      final res = await ApiService.getReports();
-      return res;
-    } catch (e) {
-      debugPrint("Reports error: $e");
+      await fetchGeoData();
+      await getReports();
+      // This will trigger notifyListeners twice (once in fetchGeoData and once here)
+      // but that's okay for refreshing dependencies.
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    return {};
   }
 }
