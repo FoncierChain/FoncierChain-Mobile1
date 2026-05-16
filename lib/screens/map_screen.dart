@@ -6,6 +6,45 @@ import 'package:provider/provider.dart';
 import '../services/land_service.dart';
 import '../services/api_service.dart';
 
+// Supposons que votre modèle Parcel ressemble à ceci ou s'adapte ainsi :
+class Parcel {
+  final String id;
+  final String cadastralId; // Fallback ou copie de l'ID
+  final String address;
+  final String ownerName;
+  final double area;
+  final String usage;
+  final String status;
+  final String landType;
+  final List<LatLng> points;
+
+  Parcel({
+    required this.id,
+    required this.cadastralId,
+    required this.address,
+    required this.ownerName,
+    required this.area,
+    required this.usage,
+    required this.status,
+    required this.landType,
+    required this.points,
+  });
+
+  factory Parcel.fromMap(Map<String, dynamic> map, List<LatLng> points) {
+    return Parcel(
+      id: map['parcelId'] ?? 'Inconnu',
+      cadastralId: map['parcelId'] ?? 'Inconnu',
+      address: map['address'] ?? '',
+      ownerName: map['currentOwner'] ?? 'Inconnu',
+      area: (map['surface'] as num?)?.toDouble() ?? 0.0,
+      usage: map['usage'] ?? 'Non spécifié',
+      status: map['status'] ?? 'DRAFT',
+      landType: map['land_type'] ?? 'Cadastre',
+      points: points,
+    );
+  }
+}
+
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -25,21 +64,50 @@ class _MapScreenState extends State<MapScreen> {
     _loadMapData();
   }
 
+  // Fonction utilitaire pour calculer le centre géographique d'un polygone
+  LatLng _computeCenter(List<LatLng> points) {
+    if (points.isEmpty)
+      return const LatLng(-4.2634, 15.2422); // Centre par défaut (Brazzaville)
+    double latSum = 0;
+    double lngSum = 0;
+    for (var point in points) {
+      latSum += point.latitude;
+      lngSum += point.longitude;
+    }
+    return LatLng(latSum / points.length, lngSum / points.length);
+  }
+
   Future<void> _loadMapData() async {
     setState(() => _isLoading = true);
-    final data = await ApiService.getMapData();
-    if (mounted) {
-      setState(() {
-        _mapData = data;
-        _isLoading = false;
-      });
-      
-      if (data.isNotEmpty) {
-        final first = data.first;
-        final lat = (first['lat'] as num).toDouble();
-        final lng = (first['lng'] as num).toDouble();
-        _mapController.move(LatLng(lat, lng), 15.0);
+    try {
+      final data = await ApiService.getMapData();
+      if (mounted) {
+        setState(() {
+          _mapData = data;
+          _isLoading = false;
+        });
+
+        // Trouver la première parcelle valide avec des coordonnées pour centrer la carte au démarrage
+        final firstValid = data.firstWhere(
+          (d) =>
+              d['coordinates'] != null && (d['coordinates'] as List).isNotEmpty,
+          orElse: () => null,
+        );
+
+        if (firstValid != null) {
+          final List<dynamic> coords = firstValid['coordinates'];
+          final List<LatLng> points = coords
+              .map((c) =>
+                  LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble()))
+              .toList();
+          final center = _computeCenter(points);
+          _mapController.move(center, 14.0);
+        }
       }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Erreur de chargement: $e")));
     }
   }
 
@@ -83,11 +151,19 @@ class _MapScreenState extends State<MapScreen> {
     final currentMapType = service.currentMapType;
     final protectedZones = service.protectedZones;
 
+    // On filtre uniquement les parcelles qui ont des coordonnées réelles
+    final validParcelsData = _mapData
+        .where((data) =>
+            data['coordinates'] != null &&
+            (data['coordinates'] as List).isNotEmpty)
+        .toList();
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        initialCenter: const LatLng(-4.2634, 15.2422),
-        initialZoom: 15.0,
+        initialCenter:
+            const LatLng(-4.2634, 15.2422), // Centre par défaut : Brazzaville
+        initialZoom: 14.0,
         onTap: (_, __) => setState(() => _selectedParcel = null),
       ),
       children: [
@@ -95,24 +171,32 @@ class _MapScreenState extends State<MapScreen> {
           urlTemplate: _getTileUrl(currentMapType),
           userAgentPackageName: 'com.foncierchain.app',
         ),
+        // Couche des Polygones
         PolygonLayer(
           polygons: [
             ...protectedZones.map((z) => Polygon(
-              points: z.polygon,
-              color: Colors.red.withOpacity(0.2),
-              borderColor: Colors.red,
-              borderStrokeWidth: 2,
-              isFilled: true,
-              label: z.name,
-              labelStyle: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-            )),
-            ..._mapData.where((data) => data['coordinates'] != null).map((data) {
+                  points: z.polygon,
+                  color: Colors.red.withOpacity(0.2),
+                  borderColor: Colors.red,
+                  borderStrokeWidth: 2,
+                  isFilled: true,
+                  label: z.name,
+                  labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                )),
+            ...validParcelsData.map((data) {
               final List<dynamic> coords = data['coordinates'];
-              final List<LatLng> points = coords.map((c) => LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
-              // In the new data, land_type might be missing in some parcels, defaulting to "Cadastre"
-              final landType = data['land_type'] ?? (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
+              final List<LatLng> points = coords
+                  .map((c) => LatLng(
+                      (c[0] as num).toDouble(), (c[1] as num).toDouble()))
+                  .toList();
+
+              final landType = data['land_type'] ??
+                  (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
               final colorValue = service.getLandColor(landType, data['status']);
-              
+
               return Polygon(
                 points: points,
                 color: Color(colorValue).withOpacity(0.4),
@@ -123,33 +207,50 @@ class _MapScreenState extends State<MapScreen> {
             }),
           ],
         ),
+        // Couche des Marqueurs (Placés au centre exact de chaque polygone)
         MarkerLayer(
-          markers: _mapData.map((data) {
-            final lat = (data['lat'] as num).toDouble();
-            final lng = (data['lng'] as num).toDouble();
-            final landType = data['land_type'] ?? (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
+          markers: validParcelsData.map((data) {
+            final List<dynamic> coords = data['coordinates'];
+            final List<LatLng> points = coords
+                .map((c) =>
+                    LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble()))
+                .toList();
+            final centerPoint = _computeCenter(points);
+
+            final landType = data['land_type'] ??
+                (data['status'] == 'ON_SALE' ? 'En Vente' : 'Cadastre');
+            final colorValue = service.getLandColor(landType, data['status']);
+
             return Marker(
-              point: LatLng(lat, lng),
+              point: centerPoint,
               width: 40,
               height: 40,
               child: GestureDetector(
                 onTap: () {
                   setState(() {
-                    _selectedParcel = Parcel.fromMap(data);
+                    _selectedParcel = Parcel.fromMap(data, points);
                   });
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Color(service.getLandColor(landType, data['status'])).withOpacity(0.35),
-                    border: Border.all(color: Color(service.getLandColor(landType, data['status'])), width: 2),
+                    color: Color(colorValue).withOpacity(0.35),
+                    border: Border.all(color: Color(colorValue), width: 2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Icon(
-                      data['status'] == "FINALIZED" ? Icons.verified : 
-                      (data['status'] == "LITIGE" || data['status'] == "EN_LITIGE" ? Icons.warning_amber_rounded : 
-                      (data['status'] == "ON_SALE" ? Icons.shopping_cart_outlined : 
-                      (data['status'] == "HERITAGE" || data['status'] == "BLOCKED_FOR_HERITAGE" ? Icons.family_restroom : Icons.location_on))),
+                      data['status'] == "FINALIZED"
+                          ? Icons.verified
+                          : (data['status'] == "LITIGE" ||
+                                  data['status'] == "EN_LITIGE"
+                              ? Icons.warning_amber_rounded
+                              : (data['status'] == "ON_SALE"
+                                  ? Icons.shopping_cart_outlined
+                                  : (data['status'] == "HERITAGE" ||
+                                          data['status'] ==
+                                              "BLOCKED_FOR_HERITAGE"
+                                      ? Icons.family_restroom
+                                      : Icons.location_on))),
                       color: Colors.white,
                       size: 18,
                     ),
@@ -163,7 +264,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _showSignalFraudDialog(BuildContext context, Parcel parcel, bool isDark) {
+  void _showSignalFraudDialog(
+      BuildContext context, Parcel parcel, bool isDark) {
     final reasonController = TextEditingController();
     showDialog(
       context: context,
@@ -178,28 +280,38 @@ class _MapScreenState extends State<MapScreen> {
             TextField(
               controller: reasonController,
               decoration: InputDecoration(
-                hintText: "Raison du signalement (Corruption, Doublon, Contestation...)",
-                hintStyle: TextStyle(fontSize: 12, color: isDark ? Colors.white24 : Colors.black26),
+                hintText:
+                    "Raison du signalement (Corruption, Doublon, Contestation...)",
+                hintStyle: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white24 : Colors.black26),
               ),
               maxLines: 3,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Annuler")),
           ElevatedButton(
             onPressed: () async {
               try {
-                await Provider.of<LandService>(context, listen: false).signalFraud(parcel.id, parcel.cadastralId, reasonController.text);
+                await Provider.of<LandService>(context, listen: false)
+                    .signalFraud(
+                        parcel.id, parcel.cadastralId, reasonController.text);
                 Navigator.pop(context);
                 _loadMapData();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Signalement enregistré. Parcelle mise sous séquestre.")));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                        "Signalement enregistré. Parcelle mise sous séquestre.")));
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text("Erreur: $e")));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text("SIGNHALER"),
+            child: const Text("SIGNALER"),
           ),
         ],
       ),
@@ -250,50 +362,60 @@ class _MapScreenState extends State<MapScreen> {
               decoration: BoxDecoration(
                 color: containerColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 15)],
+                border:
+                    Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                      blurRadius: 15)
+                ],
               ),
               child: TextField(
                 onSubmitted: (value) async {
                   if (value.isEmpty) return;
-                  final service = Provider.of<LandService>(context, listen: false);
+                  final service =
+                      Provider.of<LandService>(context, listen: false);
                   setState(() => _isLoading = true);
                   final results = await service.searchParcels(value);
                   setState(() => _isLoading = false);
+
                   if (results.isNotEmpty) {
                     final p = results.first;
-                    // If the parcel has a single lat/lng
-                    final lat = p.coordinates != null && p.coordinates!.isNotEmpty 
-                        ? p.coordinates!.first.latitude 
-                        : (p.address.contains(',') ? -4.26 : -4.26); // Fallback logic
-                    
-                    // Actually, let's find it in _mapData for better visual move
+
                     final parcelInData = _mapData.firstWhere(
-                      (d) => d['parcelId'] == p.id || d['cadastralId'] == p.id || d['id'].toString() == p.id,
+                      (d) =>
+                          d['parcelId'] == p.id || d['id'].toString() == p.id,
                       orElse: () => null,
                     );
-                    
-                    if (parcelInData != null) {
-                      final lat = (parcelInData['lat'] as num).toDouble();
-                      final lng = (parcelInData['lng'] as num).toDouble();
-                      _mapController.move(LatLng(lat, lng), 17.0);
+
+                    if (parcelInData != null &&
+                        parcelInData['coordinates'] != null &&
+                        (parcelInData['coordinates'] as List).isNotEmpty) {
+                      final List<dynamic> coords = parcelInData['coordinates'];
+                      final List<LatLng> points = coords
+                          .map((c) => LatLng((c[0] as num).toDouble(),
+                              (c[1] as num).toDouble()))
+                          .toList();
+                      final centerPoint = _computeCenter(points);
+
+                      _mapController.move(centerPoint, 17.0);
                       setState(() {
-                        _selectedParcel = Parcel.fromMap(parcelInData);
+                        _selectedParcel = Parcel.fromMap(parcelInData, points);
                       });
                     } else {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text("Parcelle trouvée mais non affichée sur la carte actuelle."))
-                       );
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text(
+                              "Parcelle trouvée mais sans coordonnées géographiques valides.")));
                     }
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Aucune parcelle trouvée pour cet ID."))
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("Aucune parcelle trouvée pour cet ID.")));
                   }
                 },
                 decoration: InputDecoration(
                   hintText: "Rechercher une zone, un ID...",
-                  prefixIcon: const Icon(Icons.search, color: Color(0xFF00963F)),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Color(0xFF00963F)),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -310,9 +432,11 @@ class _MapScreenState extends State<MapScreen> {
             decoration: BoxDecoration(
               color: containerColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+              border:
+                  Border.all(color: isDark ? Colors.white10 : Colors.black12),
             ),
-            child: Icon(Icons.filter_list, color: isDark ? Colors.white70 : Colors.black54, size: 20),
+            child: Icon(Icons.filter_list,
+                color: isDark ? Colors.white70 : Colors.black54, size: 20),
           ),
         ],
       ),
@@ -323,7 +447,9 @@ class _MapScreenState extends State<MapScreen> {
     final bool isWide = MediaQuery.of(context).size.width > 900;
     if (!isWide) return const SizedBox.shrink();
 
-    final containerColor = isDark ? const Color(0xFF161B22).withOpacity(0.9) : Colors.white.withOpacity(0.9);
+    final containerColor = isDark
+        ? const Color(0xFF161B22).withOpacity(0.9)
+        : Colors.white.withOpacity(0.9);
 
     return Positioned(
       left: 24,
@@ -334,14 +460,24 @@ class _MapScreenState extends State<MapScreen> {
         decoration: BoxDecoration(
           color: containerColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 40)],
+          border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                blurRadius: 40)
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("STATISTIQUES CADAS.", style: TextStyle(color: Color(0xFF00963F), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            const Text("STATISTIQUES CADAS.",
+                style: TextStyle(
+                    color: Color(0xFF00963F),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1)),
             const SizedBox(height: 20),
             _buildMiniStat("12,450", "Parcelles", Icons.home_work, isDark),
             const SizedBox(height: 16),
@@ -353,7 +489,10 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: 24),
             Divider(color: isDark ? Colors.white10 : Colors.black12),
             const SizedBox(height: 20),
-            Text("FILTRES RAPIDES", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
+            Text("FILTRES RAPIDES",
+                style: TextStyle(
+                    color: isDark ? Colors.white24 : Colors.black26,
+                    fontSize: 10)),
             const SizedBox(height: 12),
             _buildCheckItem("Zone Résidentielle", true, isDark),
             _buildCheckItem("Zone Commerciale", false, isDark),
@@ -364,7 +503,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMiniStat(String value, String label, IconData icon, bool isDark) {
+  Widget _buildMiniStat(
+      String value, String label, IconData icon, bool isDark) {
     return Row(
       children: [
         Icon(icon, color: isDark ? Colors.white30 : Colors.black26, size: 16),
@@ -372,8 +512,15 @@ class _MapScreenState extends State<MapScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
-            Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10)),
+            Text(value,
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black87)),
+            Text(label,
+                style: TextStyle(
+                    color: isDark ? Colors.white38 : Colors.black38,
+                    fontSize: 10)),
           ],
         ),
       ],
@@ -391,12 +538,22 @@ class _MapScreenState extends State<MapScreen> {
             decoration: BoxDecoration(
               color: value ? const Color(0xFF00963F) : Colors.transparent,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: value ? const Color(0xFF00963F) : (isDark ? Colors.white10 : Colors.black12)),
+              border: Border.all(
+                  color: value
+                      ? const Color(0xFF00963F)
+                      : (isDark ? Colors.white10 : Colors.black12)),
             ),
-            child: value ? const Icon(Icons.check, color: Colors.white, size: 10) : null,
+            child: value
+                ? const Icon(Icons.check, color: Colors.white, size: 10)
+                : null,
           ),
           const SizedBox(width: 12),
-          Text(label, style: TextStyle(color: value ? (isDark ? Colors.white70 : Colors.black87) : (isDark ? Colors.white24 : Colors.black26), fontSize: 11)),
+          Text(label,
+              style: TextStyle(
+                  color: value
+                      ? (isDark ? Colors.white70 : Colors.black87)
+                      : (isDark ? Colors.white24 : Colors.black26),
+                  fontSize: 11)),
         ],
       ),
     );
@@ -416,8 +573,13 @@ class _MapScreenState extends State<MapScreen> {
         decoration: BoxDecoration(
           color: containerColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), blurRadius: 40)],
+          border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                blurRadius: 40)
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -426,24 +588,27 @@ class _MapScreenState extends State<MapScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.black12)),
+                border: Border(
+                    bottom: BorderSide(
+                        color: isDark ? Colors.white10 : Colors.black12)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Text(
+                  Text(
                     "DÉTAILS PARCELLE",
-                    style: GoogleFonts.inter(color: isDark ? Colors.white38 : Colors.black38, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(
+                        color: isDark ? Colors.white38 : Colors.black38,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold),
                   ),
-                  Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    child: IconButton(
-                      onPressed: () => setState(() => _selectedParcel = null),
-                      icon: const Icon(Icons.close, size: 20, color: Colors.redAccent),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.redAccent.withOpacity(0.1),
-                        padding: const EdgeInsets.all(8),
-                      ),
+                  IconButton(
+                    onPressed: () => setState(() => _selectedParcel = null),
+                    icon: const Icon(Icons.close,
+                        size: 20, color: Colors.redAccent),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.redAccent.withOpacity(0.1),
+                      padding: const EdgeInsets.all(8),
                     ),
                   ),
                 ],
@@ -454,39 +619,45 @@ class _MapScreenState extends State<MapScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_selectedParcel!.id, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: isDark ? Colors.white : Colors.black87)),
+                  Text(_selectedParcel!.id,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                          color: isDark ? Colors.white : Colors.black87)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Container(
-                        width: 8, 
-                        height: 8, 
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(_selectedParcel!.status), 
-                          shape: BoxShape.circle
-                        )
-                      ),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                              color: _getStatusColor(_selectedParcel!.status),
+                              shape: BoxShape.circle)),
                       const SizedBox(width: 8),
                       Text(
                         "STATUT: ${Provider.of<LandService>(context, listen: false).getStatusLabel(_selectedParcel!.status).toUpperCase()}",
                         style: TextStyle(
-                          color: _getStatusColor(_selectedParcel!.status), 
-                          fontSize: 10, 
-                          fontWeight: FontWeight.bold
-                        ),
+                            color: _getStatusColor(_selectedParcel!.status),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildInfoTile(Icons.landscape, "TYPE DE TERRE", _selectedParcel!.landType, isDark),
+                  _buildInfoTile(Icons.landscape, "TYPE DE TERRE",
+                      _selectedParcel!.landType, isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE", _selectedParcel!.ownerName, isDark),
+                  _buildInfoTile(Icons.person_outline, "PROPRIÉTAIRE",
+                      _selectedParcel!.ownerName, isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.square_foot, "SURFACE", "${_selectedParcel!.area} m²", isDark),
+                  _buildInfoTile(Icons.square_foot, "SURFACE",
+                      "${_selectedParcel!.area.toStringAsFixed(0)} m²", isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.info_outline, "USAGE", _selectedParcel!.usage, isDark),
+                  _buildInfoTile(Icons.info_outline, "USAGE",
+                      _selectedParcel!.usage, isDark),
                   const SizedBox(height: 16),
-                  _buildInfoTile(Icons.location_on_outlined, "ADRESSE", _selectedParcel!.address, isDark),
+                  _buildInfoTile(Icons.location_on_outlined, "ADRESSE",
+                      _selectedParcel!.address, isDark),
                   const SizedBox(height: 24),
                   Divider(color: isDark ? Colors.white10 : Colors.black12),
                   const SizedBox(height: 16),
@@ -494,7 +665,8 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () => _showSignalFraudDialog(context, _selectedParcel!, isDark),
+                          onPressed: () => _showSignalFraudDialog(
+                              context, _selectedParcel!, isDark),
                           icon: const Icon(Icons.report_problem, size: 18),
                           label: const Text("SIGNALEMENT"),
                           style: ElevatedButton.styleFrom(
@@ -507,29 +679,47 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text("CERTIFICAT NUMÉRIQUE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: isDark ? Colors.white38 : Colors.black38)),
+                  Text("CERTIFICAT NUMÉRIQUE",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : Colors.black38)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.black26 : Colors.grey[100], 
-                      borderRadius: BorderRadius.circular(12), 
-                      border: Border.all(color: isDark ? Colors.white10 : Colors.black12)
-                    ),
+                        color: isDark ? Colors.black26 : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: isDark ? Colors.white10 : Colors.black12)),
                     child: Row(
                       children: [
-                        Icon(Icons.description_outlined, color: isDark ? Colors.white38 : Colors.black38),
+                        Icon(Icons.description_outlined,
+                            color: isDark ? Colors.white38 : Colors.black38),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("CERT-45785.pdf", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white : Colors.black87)),
-                              Text("Signé par FoncierChain solutions", style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 10)),
+                              Text("CERT-${_selectedParcel!.id}.pdf",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87)),
+                              Text(
+                                  "Signé via Blockchain hash: ${_selectedParcel!.id.length > 8 ? _selectedParcel!.id.substring(0, 8) : 'FoncierChain'}",
+                                  style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white24
+                                          : Colors.black26,
+                                      fontSize: 10)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.open_in_new, size: 14, color: Color(0xFF00963F)),
+                        const Icon(Icons.open_in_new,
+                            size: 14, color: Color(0xFF00963F)),
                       ],
                     ),
                   ),
@@ -551,24 +741,36 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value, bool isDark) {
+  Widget _buildInfoTile(
+      IconData icon, String label, String value, bool isDark) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (isDark ? Colors.white : Colors.black).withOpacity(0.05), 
-            borderRadius: BorderRadius.circular(8)
-          ),
-          child: Icon(icon, color: isDark ? Colors.white38 : Colors.black38, size: 18),
+              color: (isDark ? Colors.white : Colors.black).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon,
+              color: isDark ? Colors.white38 : Colors.black38, size: 18),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(color: isDark ? Colors.white24 : Colors.black26, fontSize: 9, fontWeight: FontWeight.bold)),
-            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      color: isDark ? Colors.white24 : Colors.black26,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold)),
+              Text(value,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : Colors.black87),
+                  overflow: TextOverflow.ellipsis),
+            ],
+          ),
         ),
       ],
     );
@@ -583,21 +785,33 @@ class _MapScreenState extends State<MapScreen> {
       left: 24,
       child: Column(
         children: [
-          _buildMapTypeControl(Icons.map, MapLayerType.street, currentMapType, isDark, service),
+          _buildMapTypeControl(
+              Icons.map, MapLayerType.street, currentMapType, isDark, service),
           const SizedBox(height: 8),
-          _buildMapTypeControl(Icons.satellite_alt, MapLayerType.satellite, currentMapType, isDark, service),
+          _buildMapTypeControl(Icons.satellite_alt, MapLayerType.satellite,
+              currentMapType, isDark, service),
           const SizedBox(height: 8),
-          _buildMapTypeControl(Icons.landscape, MapLayerType.terrain, currentMapType, isDark, service),
+          _buildMapTypeControl(Icons.landscape, MapLayerType.terrain,
+              currentMapType, isDark, service),
           const SizedBox(height: 16),
-          _buildMapButton(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1), isDark),
+          _buildMapButton(
+              Icons.add,
+              () => _mapController.move(
+                  _mapController.camera.center, _mapController.camera.zoom + 1),
+              isDark),
           const SizedBox(height: 8),
-          _buildMapButton(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1), isDark),
+          _buildMapButton(
+              Icons.remove,
+              () => _mapController.move(
+                  _mapController.camera.center, _mapController.camera.zoom - 1),
+              isDark),
         ],
       ),
     );
   }
 
-  Widget _buildMapTypeControl(IconData icon, MapLayerType type, MapLayerType current, bool isDark, LandService service) {
+  Widget _buildMapTypeControl(IconData icon, MapLayerType type,
+      MapLayerType current, bool isDark, LandService service) {
     bool isSelected = type == current;
     return GestureDetector(
       onTap: () => service.setMapType(type),
@@ -605,12 +819,25 @@ class _MapScreenState extends State<MapScreen> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00963F) : (isDark ? const Color(0xFF161B22) : Colors.white),
+          color: isSelected
+              ? const Color(0xFF00963F)
+              : (isDark ? const Color(0xFF161B22) : Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? const Color(0xFF00963F) : (isDark ? Colors.white10 : Colors.black12)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
+          border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF00963F)
+                  : (isDark ? Colors.white10 : Colors.black12)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                blurRadius: 10)
+          ],
         ),
-        child: Icon(icon, size: 20, color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
+        child: Icon(icon,
+            size: 20,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.white70 : Colors.black54)),
       ),
     );
   }
@@ -625,9 +852,14 @@ class _MapScreenState extends State<MapScreen> {
           color: isDark ? const Color(0xFF161B22) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                blurRadius: 10)
+          ],
         ),
-        child: Icon(icon, size: 20, color: isDark ? Colors.white70 : Colors.black54),
+        child: Icon(icon,
+            size: 20, color: isDark ? Colors.white70 : Colors.black54),
       ),
     );
   }

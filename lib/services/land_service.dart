@@ -13,7 +13,8 @@ class ProtectedZone {
   final List<LatLng> polygon;
   final String reason;
 
-  ProtectedZone({required this.name, required this.polygon, required this.reason});
+  ProtectedZone(
+      {required this.name, required this.polygon, required this.reason});
 }
 
 class AppUser {
@@ -102,15 +103,19 @@ class Parcel {
   factory Parcel.fromMap(Map<String, dynamic> data) {
     List<LatLng>? coords;
     if (data['coordinates'] != null) {
-      coords = (data['coordinates'] as List).map((c) => LatLng(c[0].toDouble(), c[1].toDouble())).toList();
+      coords = (data['coordinates'] as List)
+          .map((c) => LatLng(c[0].toDouble(), c[1].toDouble()))
+          .toList();
     }
     return Parcel(
       id: data['parcelId'] ?? data['id']?.toString() ?? '',
-      ownerName: data['owner'] ?? data['currentOwner'] ?? data['ownerName'] ?? '',
+      ownerName:
+          data['owner'] ?? data['currentOwner'] ?? data['ownerName'] ?? '',
       ownerId: data['ownerId'] ?? 'UID-TEMP',
       city: data['city'] ?? 'Brazzaville',
       neighborhood: data['neighborhood'] ?? '',
-      cadastralId: data['cadastralId'] ?? "CAD-${data['parcelId'] ?? data['id']}",
+      cadastralId:
+          data['cadastralId'] ?? "CAD-${data['parcelId'] ?? data['id']}",
       area: (data['area'] ?? data['surface'] ?? 0).toDouble(),
       price: (data['price'] ?? 0).toDouble(),
       usage: data['usage'] ?? data['usage_type'] ?? '',
@@ -130,9 +135,11 @@ class Parcel {
       documentHash: data['hash'] ?? data['documentHash'],
       txId: data['txId'] ?? data['hash'],
       coordinates: coords,
-      lastUpdate: data['createdAt'] != null 
-          ? DateTime.parse(data['createdAt']) 
-          : (data['timestamp'] != null ? DateTime.parse(data['timestamp']) : DateTime.now()),
+      lastUpdate: data['createdAt'] != null
+          ? DateTime.parse(data['createdAt'])
+          : (data['timestamp'] != null
+              ? DateTime.parse(data['timestamp'])
+              : DateTime.now()),
     );
   }
 }
@@ -183,8 +190,25 @@ class LandService with ChangeNotifier {
   bool get isOffline => _isOffline;
 
   Map<String, List<String>> _congoGeoData = {
-    "Brazzaville": ["Makélékélé", "Bacongo", "Poto-Poto", "Moungali", "Ouenzé", "Talangaï", "Mfilou", "Madibou", "Djiri"],
-    "Pointe-Noire": ["Lumumba", "Mvoumvou", "Tié-Tié", "Loandjili", "Mongo-Mpoucou", "Ngoyo"],
+    "Brazzaville": [
+      "Makélékélé",
+      "Bacongo",
+      "Poto-Poto",
+      "Moungali",
+      "Ouenzé",
+      "Talangaï",
+      "Mfilou",
+      "Madibou",
+      "Djiri"
+    ],
+    "Pointe-Noire": [
+      "Lumumba",
+      "Mvoumvou",
+      "Tié-Tié",
+      "Loandjili",
+      "Mongo-Mpoucou",
+      "Ngoyo"
+    ],
   };
   Map<String, List<String>> get congoGeoData => _congoGeoData;
 
@@ -215,7 +239,8 @@ class LandService with ChangeNotifier {
         LatLng(1.2000, 15.2000),
         LatLng(0.8000, 15.2000),
       ],
-      reason: "Patrimoine naturel protégé. Aucune exploitation foncière autorisée.",
+      reason:
+          "Patrimoine naturel protégé. Aucune exploitation foncière autorisée.",
     ),
   ];
   List<ProtectedZone> get protectedZones => _protectedZones;
@@ -243,7 +268,8 @@ class LandService with ChangeNotifier {
       if (res['cities'] != null) {
         Map<String, List<String>> newData = {};
         for (var cityGroup in res['cities']) {
-          newData[cityGroup['name'].toString()] = List<String>.from(cityGroup['neighborhoods']);
+          newData[cityGroup['name'].toString()] =
+              List<String>.from(cityGroup['neighborhoods']);
         }
         _congoGeoData = newData;
         notifyListeners();
@@ -253,7 +279,8 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<void> verifyKYC(String idNumber, {Map<String, dynamic>? extractedData}) async {
+  Future<void> verifyKYC(String idNumber,
+      {Map<String, dynamic>? extractedData}) async {
     if (_currentUser == null) return;
     _isLoading = true;
     notifyListeners();
@@ -276,7 +303,8 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> analyzeKYCWithGemini(Uint8List recto, Uint8List verso) async {
+  Future<Map<String, dynamic>> analyzeKYCWithGemini(
+      Uint8List recto, Uint8List verso) async {
     const apiKey = String.fromEnvironment('GEMINI_API_KEY');
     if (apiKey.isEmpty) {
       return {'error': "Clé API Gemini non configurée dans l'environnement."};
@@ -312,15 +340,17 @@ class LandService with ChangeNotifier {
       final response = await model.generateContent(content);
       final text = response.text;
       if (text == null) throw Exception("Pas de réponse de Gemini");
-      
+
       // Clean potential markdown code blocks
-      final cleanedText = text.replaceAll('```json', '').replaceAll('```', '').trim();
+      final cleanedText =
+          text.replaceAll('```json', '').replaceAll('```', '').trim();
       return jsonDecode(cleanedText);
     } catch (e) {
       debugPrint("Gemini KYC Error: $e");
       return {'error': "Erreur lors de l'analyse avec Gemini: $e"};
     }
   }
+
   String? _pendingSearchQuery;
   String? get pendingSearchQuery => _pendingSearchQuery;
 
@@ -344,7 +374,11 @@ class LandService with ChangeNotifier {
   String get userRole => _simulatedRole ?? _userRole;
 
   final List<Map<String, dynamic>> _chatHistory = [
-    {"text": "Bonjour ! Je suis l'assistant FoncierChain. Comment puis-je vous aider ?", "isMe": false},
+    {
+      "text":
+          "Bonjour ! Je suis l'assistant FoncierChain. Comment puis-je vous aider ?",
+      "isMe": false
+    },
   ];
   List<Map<String, dynamic>> get chatHistory => _chatHistory;
 
@@ -357,7 +391,9 @@ class LandService with ChangeNotifier {
     addChatMessage(message, true);
     try {
       final res = await ApiService.sendChatMessage(message);
-      String botReply = res['reply'] ?? res['message'] ?? "Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?";
+      String botReply = res['reply'] ??
+          res['message'] ??
+          "Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?";
       addChatMessage(botReply, false);
     } catch (e) {
       addChatMessage("Erreur de connexion au chatbot.", false);
@@ -369,9 +405,9 @@ class LandService with ChangeNotifier {
     if (searchQuery != null) {
       _pendingSearchQuery = searchQuery;
     }
-    
+
     // Auto-refresh when entering the agent portal for real-time data
-    if (index == 4) { 
+    if (index == 4) {
       refreshAll();
     } else {
       notifyListeners();
@@ -412,16 +448,26 @@ class LandService with ChangeNotifier {
 
   String getStatusLabel(String status) {
     switch (status) {
-      case 'PENDING_CONTROL': return "Contrôle en attente";
-      case 'DRAFT': return "Levé technique / Brouillon";
-      case 'COMMUNITY_VALIDATED': return "Validation communautaire";
-      case 'NOTARY_VALIDATED': return "Validé par le Notaire";
-      case 'FINALIZED': return "Titre Foncier Définitif";
-      case 'ON_SALE': return "Mis en vente";
-      case 'SALE_PENDING': return "Procédure de vente";
-      case 'HERITAGE': return "Succession enregistrée";
-      case 'LITIGE': return "Litiges / Signalé";
-      default: return status.replaceAll('_', ' ');
+      case 'PENDING_CONTROL':
+        return "Contrôle en attente";
+      case 'DRAFT':
+        return "Levé technique / Brouillon";
+      case 'COMMUNITY_VALIDATED':
+        return "Validation communautaire";
+      case 'NOTARY_VALIDATED':
+        return "Validé par le Notaire";
+      case 'FINALIZED':
+        return "Titre Foncier Définitif";
+      case 'ON_SALE':
+        return "Mis en vente";
+      case 'SALE_PENDING':
+        return "Procédure de vente";
+      case 'HERITAGE':
+        return "Succession enregistrée";
+      case 'LITIGE':
+        return "Litiges / Signalé";
+      default:
+        return status.replaceAll('_', ' ');
     }
   }
 
@@ -432,19 +478,24 @@ class LandService with ChangeNotifier {
     notifyListeners();
     try {
       final res = await ApiService.openEscrow(landId, amount);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur de séquestre");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur de séquestre");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> giveLocalAdvice(String landId, String comment, String action) async {
+  Future<void> giveLocalAdvice(
+      String landId, String comment, String action) async {
     _isLoading = true;
     notifyListeners();
     try {
       final res = await ApiService.giveLocalAdvice(landId, comment, action);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur d'avis local");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur d'avis local");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -457,7 +508,8 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "NOTARY_VALIDATED");
       final res = await ApiService.notaryValidate(landId, signature);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur notaire");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(res['message'] ?? res['error'] ?? "Erreur notaire");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -470,7 +522,9 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "FINALIZED");
       final res = await ApiService.ministryApprove(landId, signature);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur ministérielle");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur ministérielle");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -506,9 +560,16 @@ class LandService with ChangeNotifier {
         'signatureV2': generateSecureSignature(parcelId, "DRAFT"),
         'documentHash': documentHash,
         'address': address,
-        'lat': lat ?? (coordinates != null && coordinates.isNotEmpty ? coordinates.first.latitude : -4.26), 
-        'lng': lng ?? (coordinates != null && coordinates.isNotEmpty ? coordinates.first.longitude : 15.28),
-        'coordinates': coordinates?.map((c) => [c.latitude, c.longitude]).toList(),
+        'lat': lat ??
+            (coordinates != null && coordinates.isNotEmpty
+                ? coordinates.first.latitude
+                : -4.26),
+        'lng': lng ??
+            (coordinates != null && coordinates.isNotEmpty
+                ? coordinates.first.longitude
+                : 15.28),
+        'coordinates':
+            coordinates?.map((c) => [c.latitude, c.longitude]).toList(),
       });
       _isOffline = response['is_offline'] == true;
 
@@ -524,7 +585,8 @@ class LandService with ChangeNotifier {
     }
   }
 
-  Future<void> signalFraud(String? landId, String? cadastralId, String reason) async {
+  Future<void> signalFraud(
+      String? landId, String? cadastralId, String reason) async {
     if (_currentUser == null) return;
     _isLoading = true;
     notifyListeners();
@@ -536,7 +598,8 @@ class LandService with ChangeNotifier {
         'reporter_id': _currentUser!.uid,
       });
       if (res['status'] == 'FAILED' || res.containsKey('error')) {
-        throw Exception(res['message'] ?? res['error'] ?? "Erreur lors du signalement");
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur lors du signalement");
       }
     } finally {
       _isLoading = false;
@@ -548,12 +611,14 @@ class LandService with ChangeNotifier {
     return signalFraud(landId, null, reason);
   }
 
-  Future<void> submitOpposition(String landId, String reason, String proofHash) async {
+  Future<void> submitOpposition(
+      String landId, String reason, String proofHash) async {
     _isLoading = true;
     notifyListeners();
     try {
       final res = await ApiService.submitOpposition(landId, reason, proofHash);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur opposition");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(res['message'] ?? res['error'] ?? "Erreur opposition");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -566,7 +631,10 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "COMMUNITY_VALIDATED");
       final res = await ApiService.validateLand(landId, signature);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur validation communautaire");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(res['message'] ??
+            res['error'] ??
+            "Erreur validation communautaire");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -579,7 +647,9 @@ class LandService with ChangeNotifier {
     try {
       final signature = generateSecureSignature(landId, "FINALIZED");
       final res = await ApiService.finalizeLand(landId, signature);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur finalisation");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur finalisation");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -590,7 +660,9 @@ class LandService with ChangeNotifier {
     try {
       final res = await ApiService.getLandHistory(landId);
       if (res['history'] != null) {
-        return (res['history'] as List).map((h) => TransactionHistory.fromMap(h)).toList();
+        return (res['history'] as List)
+            .map((h) => TransactionHistory.fromMap(h))
+            .toList();
       }
     } catch (e) {
       debugPrint("History error: $e");
@@ -605,9 +677,11 @@ class LandService with ChangeNotifier {
       if (res.containsKey('token')) {
         final userData = res['user'] ?? {};
         _currentUser = AppUser(
-          uid: userData['unique_id']?.toString() ?? 'UID-${userData['id'] ?? '1'}',
+          uid: userData['unique_id']?.toString() ??
+              'UID-${userData['id'] ?? '1'}',
           email: userData['email']?.toString() ?? '$username@foncierchain.cg',
-          displayName: (userData['username'] ?? username).toString().toUpperCase(),
+          displayName:
+              (userData['username'] ?? username).toString().toUpperCase(),
           role: userData['role']?.toString() ?? 'AGENT',
           signature: userData['signature']?.toString(),
           kycStatus: userData['kyc_status']?.toString(),
@@ -702,7 +776,9 @@ class LandService with ChangeNotifier {
     notifyListeners();
     try {
       final res = await ApiService.notifyHeritage(landId, deathCertId);
-      if (res['status'] == 'FAILED' || res.containsKey('error')) throw Exception(res['message'] ?? res['error'] ?? "Erreur notification héritage");
+      if (res['status'] == 'FAILED' || res.containsKey('error'))
+        throw Exception(
+            res['message'] ?? res['error'] ?? "Erreur notification héritage");
     } finally {
       _isLoading = false;
       notifyListeners();
